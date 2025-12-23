@@ -1,0 +1,961 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Smart Clock Dashboard</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --bg-primary: #000;
+            --bg-card: #2a2a2e;
+            --bg-card-light: #3a3a3e;
+            --text-primary: #fff;
+            --text-secondary: rgba(255, 255, 255, 0.7);
+            --accent-blue: #4a9eff;
+            --accent-red: #ff4a4a;
+            --accent-orange: #ff9500;
+            --accent-yellow: #ffcc00;
+            --border-radius: 12px;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            height: 100vh;
+            overflow: hidden;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 2rem;
+            padding: 2rem;
+        }
+
+        /* ===== LEFT PANEL: CLOCK ===== */
+        .clock-panel {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            gap: 1.5rem;
+        }
+
+        .flip-clock {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .flip-unit-container {
+            display: flex;
+            gap: 0.25rem;
+        }
+
+        /* ===== DIGIT CARD STYLES ===== */
+        .digit-card {
+            position: relative;
+            width: 9vw;
+            height: 12vw;
+            background: var(--bg-card);
+            border-radius: var(--border-radius);
+            overflow: hidden;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        /* Center divider line */
+        .digit-card::after {
+            content: '';
+            position: absolute;
+            left: 0;
+            right: 0;
+            top: 50%;
+            height: 2px;
+            background: rgba(0, 0, 0, 0.3);
+            z-index: 2;
+        }
+
+        .digit-wrapper {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .digit {
+            font-family: 'SF Mono', 'Monaco', 'Inconsolata', 'Roboto Mono', 'Consolas', monospace;
+            font-size: 8vw;
+            font-weight: 600;
+            font-variant-numeric: tabular-nums;
+            line-height: 1;
+            color: var(--text-primary);
+            position: absolute;
+            transition: none;
+        }
+
+        /* Roll animation */
+        .digit.rolling-out {
+            animation: rollOut 0.3s ease-in forwards;
+        }
+
+        .digit.rolling-in {
+            animation: rollIn 0.3s ease-out forwards;
+        }
+
+        @keyframes rollOut {
+            0% {
+                transform: translateY(0);
+                opacity: 1;
+            }
+
+            100% {
+                transform: translateY(30%);
+                opacity: 0;
+            }
+        }
+
+        @keyframes rollIn {
+            0% {
+                transform: translateY(-30%);
+                opacity: 0;
+            }
+
+            100% {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+
+        .separator {
+            font-size: 6vw;
+            font-weight: 300;
+            color: var(--text-secondary);
+            padding: 0 0.25rem;
+            align-self: center;
+        }
+
+        .clock-footer {
+            display: flex;
+            justify-content: space-between;
+            width: 100%;
+            max-width: 600px;
+            padding: 0 1rem;
+        }
+
+        .date-display {
+            font-size: 1.5rem;
+            font-weight: 400;
+            color: var(--text-primary);
+        }
+
+        .weather-widget {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 1.5rem;
+        }
+
+        .weather-icon {
+            font-size: 1.25rem;
+        }
+
+        .weather-temp {
+            font-weight: 500;
+        }
+
+        /* ===== RIGHT PANEL: INFO CARDS ===== */
+        .info-panel {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .cards-container {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        .info-card {
+            background: linear-gradient(135deg, rgba(42, 42, 46, 0.95), rgba(42, 42, 46, 0.8));
+            border-radius: var(--border-radius);
+            padding: 1.5rem;
+            position: relative;
+            overflow: hidden;
+            min-height: 200px;
+        }
+
+        .info-card.with-bg {
+            background-size: cover;
+            background-position: center;
+        }
+
+        .info-card.with-bg::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(135deg, rgba(0, 0, 0, 0.7), rgba(0, 0, 0, 0.4));
+        }
+
+        .card-content {
+            position: relative;
+            z-index: 1;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .card-header {
+            display: flex;
+            justify-content: flex-end;
+            margin-bottom: 1rem;
+        }
+
+        .card-source {
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+            background: rgba(0, 0, 0, 0.5);
+            padding: 0.25rem 0.75rem;
+            border-radius: 4px;
+        }
+
+        .card-title {
+            font-size: 1.5rem;
+            font-weight: 600;
+            line-height: 1.4;
+            margin-bottom: 0.75rem;
+        }
+
+        .card-description {
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+            line-height: 1.6;
+            flex: 1;
+        }
+
+        .card-footer {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-end;
+            margin-top: 1rem;
+        }
+
+        .card-time {
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+        }
+
+        /* ===== EARTHQUAKE CARD ===== */
+        .earthquake-card {
+            display: grid;
+            grid-template-columns: auto 1fr;
+            gap: 1.5rem;
+        }
+
+        .seismic-indicator {
+            border-radius: var(--border-radius);
+            padding: 1rem;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-width: 80px;
+        }
+
+        .seismic-indicator.level-1 {
+            background: #4a9eff;
+        }
+
+        .seismic-indicator.level-2 {
+            background: #4aff9e;
+        }
+
+        .seismic-indicator.level-3 {
+            background: #ffcc00;
+        }
+
+        .seismic-indicator.level-4 {
+            background: #ff9500;
+        }
+
+        .seismic-indicator.level-5 {
+            background: #ff4a4a;
+        }
+
+        .seismic-indicator.level-6 {
+            background: #a833ff;
+        }
+
+        .seismic-indicator.level-7 {
+            background: #ff0066;
+        }
+
+        .seismic-label {
+            font-size: 0.7rem;
+            font-weight: 500;
+            margin-bottom: 0.25rem;
+        }
+
+        .seismic-value {
+            font-size: 3rem;
+            font-weight: 700;
+            line-height: 1;
+        }
+
+        .earthquake-details {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        .eq-row {
+            display: grid;
+            grid-template-columns: 100px 1fr;
+            gap: 1rem;
+            font-size: 0.9rem;
+        }
+
+        .eq-label {
+            color: var(--text-secondary);
+            font-size: 0.75rem;
+        }
+
+        .eq-value {
+            font-weight: 500;
+        }
+
+        /* ===== WEATHER CARD ===== */
+        .weather-card-content {
+            display: flex;
+            align-items: center;
+            gap: 2rem;
+        }
+
+        .weather-main {
+            text-align: center;
+        }
+
+        .weather-main-icon {
+            font-size: 4rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .weather-main-temp {
+            font-size: 3rem;
+            font-weight: 600;
+        }
+
+        .weather-main-desc {
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+        }
+
+        .weather-details-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 1rem;
+            flex: 1;
+        }
+
+        .weather-detail-item {
+            text-align: center;
+            padding: 0.75rem;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 8px;
+        }
+
+        .weather-detail-label {
+            font-size: 0.7rem;
+            color: var(--text-secondary);
+            margin-bottom: 0.25rem;
+        }
+
+        .weather-detail-value {
+            font-size: 1.1rem;
+            font-weight: 500;
+        }
+
+        /* ===== CARD INDICATORS ===== */
+        .card-indicators {
+            display: flex;
+            justify-content: center;
+            gap: 0.5rem;
+            margin-top: 1rem;
+        }
+
+        .indicator {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.3);
+            transition: background 0.3s ease;
+        }
+
+        .indicator.active {
+            background: var(--text-primary);
+        }
+
+        /* ===== ANIMATIONS ===== */
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .info-card {
+            animation: fadeIn 0.5s ease;
+        }
+
+        /* ===== NO EARTHQUAKE STATE ===== */
+        .no-earthquake {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100%;
+            text-align: center;
+        }
+
+        .no-earthquake-icon {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+            opacity: 0.5;
+        }
+
+        .no-earthquake-text {
+            color: var(--text-secondary);
+            font-size: 1rem;
+        }
+    </style>
+</head>
+
+<body>
+    <!-- LEFT PANEL: CLOCK -->
+    <div class="clock-panel">
+        <div class="flip-clock">
+            <div class="flip-unit-container" id="hours">
+                <div class="digit-card" id="hour1-card">
+                    <div class="digit-wrapper">
+                        <span class="digit">0</span>
+                    </div>
+                </div>
+                <div class="digit-card" id="hour2-card">
+                    <div class="digit-wrapper">
+                        <span class="digit">0</span>
+                    </div>
+                </div>
+            </div>
+            <span class="separator">:</span>
+            <div class="flip-unit-container" id="minutes">
+                <div class="digit-card" id="min1-card">
+                    <div class="digit-wrapper">
+                        <span class="digit">0</span>
+                    </div>
+                </div>
+                <div class="digit-card" id="min2-card">
+                    <div class="digit-wrapper">
+                        <span class="digit">0</span>
+                    </div>
+                </div>
+            </div>
+            <span class="separator">:</span>
+            <div class="flip-unit-container" id="seconds">
+                <div class="digit-card" id="sec1-card">
+                    <div class="digit-wrapper">
+                        <span class="digit">0</span>
+                    </div>
+                </div>
+                <div class="digit-card" id="sec2-card">
+                    <div class="digit-wrapper">
+                        <span class="digit">0</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="clock-footer">
+            <div class="date-display" id="date">12月23日 週二</div>
+            <div class="weather-widget">
+                <span class="weather-icon" id="weatherIcon">🌙</span>
+                <span class="weather-temp" id="weatherTemp">--°</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- RIGHT PANEL: INFO CARDS -->
+    <div class="info-panel">
+        <div class="cards-container" id="cardsContainer">
+            <!-- News Card -->
+            <div class="info-card with-bg" id="newsCard"
+                style="background-image: url('https://images.unsplash.com/photo-1504711434969-e33886168f5c?w=800');">
+                <div class="card-content">
+                    <div class="card-header">
+                        <span class="card-source" id="newsSource">中央社 CNA</span>
+                    </div>
+                    <h2 class="card-title" id="newsTitle">讀取新聞中...</h2>
+                    <p class="card-description" id="newsDesc">正在載入最新新聞內容</p>
+                    <div class="card-footer">
+                        <span class="card-time" id="newsTime">--</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Weather Card -->
+            <div class="info-card" id="weatherCard" style="display: none;">
+                <div class="card-content">
+                    <div class="card-header">
+                        <span class="card-source">台北天氣</span>
+                    </div>
+                    <div class="weather-card-content">
+                        <div class="weather-main">
+                            <div class="weather-main-icon" id="weatherCardIcon">🌤️</div>
+                            <div class="weather-main-temp" id="weatherCardTemp">--°C</div>
+                            <div class="weather-main-desc" id="weatherCardDesc">--</div>
+                        </div>
+                        <div class="weather-details-grid">
+                            <div class="weather-detail-item">
+                                <div class="weather-detail-label">體感溫度</div>
+                                <div class="weather-detail-value" id="feelsLike">--°</div>
+                            </div>
+                            <div class="weather-detail-item">
+                                <div class="weather-detail-label">濕度</div>
+                                <div class="weather-detail-value" id="humidity">--%</div>
+                            </div>
+                            <div class="weather-detail-item">
+                                <div class="weather-detail-label">風速</div>
+                                <div class="weather-detail-value" id="windSpeed">-- m/s</div>
+                            </div>
+                            <div class="weather-detail-item">
+                                <div class="weather-detail-label">氣壓</div>
+                                <div class="weather-detail-value" id="pressure">-- hPa</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Earthquake Card (Taiwan CWA) -->
+            <div class="info-card with-bg" id="earthquakeCard"
+                style="display: none; background-image: url('https://images.unsplash.com/photo-1545552987-720aa18145ca?w=800');">
+                <div class="card-content">
+                    <div class="card-header">
+                        <span class="card-source">中央氣象署 地震報告</span>
+                    </div>
+                    <div class="earthquake-card" id="earthquakeContent">
+                        <div class="seismic-indicator level-1" id="seismicIndicator">
+                            <span class="seismic-label">最大震度</span>
+                            <span class="seismic-value" id="eqIntensity">-</span>
+                        </div>
+                        <div class="earthquake-details">
+                            <div class="eq-row">
+                                <div>
+                                    <div class="eq-label">發生時間</div>
+                                </div>
+                                <div class="eq-value" id="eqTime">--</div>
+                            </div>
+                            <div class="eq-row">
+                                <div>
+                                    <div class="eq-label">震央位置</div>
+                                </div>
+                                <div class="eq-value" id="eqLocation">--</div>
+                            </div>
+                            <div class="eq-row">
+                                <div>
+                                    <div class="eq-label">地震規模 / 深度</div>
+                                </div>
+                                <div class="eq-value" id="eqMagnitude">--</div>
+                            </div>
+                            <div class="eq-row">
+                                <div>
+                                    <div class="eq-label">最大震度地區</div>
+                                </div>
+                                <div class="eq-value" id="eqArea">--</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="card-indicators" id="indicators">
+            <div class="indicator active"></div>
+            <div class="indicator"></div>
+            <div class="indicator"></div>
+        </div>
+    </div>
+
+    <script>
+        // ===== CONFIGURATION =====
+        const CONFIG = {
+            WEATHER_API_KEY: '',
+            LAT: 25.0330,
+            LON: 121.5654,
+            CWA_API_KEY: '',
+            CARD_INTERVAL: 10000,
+            CORS_PROXY: '', // Not needed for same-origin or CORS-enabled feeds
+            NEWS_SOURCES: [
+                { name: '智流 Smart Flow', url: 'https://smart-flow.rd.coach/feed.xml' },
+            ],
+        };
+
+        // ===== CLOCK MODULE =====
+        const digitCards = {
+            hour1: document.querySelector('#hour1-card .digit'),
+            hour2: document.querySelector('#hour2-card .digit'),
+            min1: document.querySelector('#min1-card .digit'),
+            min2: document.querySelector('#min2-card .digit'),
+            sec1: document.querySelector('#sec1-card .digit'),
+            sec2: document.querySelector('#sec2-card .digit'),
+        };
+
+        const currentDigits = {
+            hour1: '', hour2: '',
+            min1: '', min2: '',
+            sec1: '', sec2: '',
+        };
+
+        function updateDigit(key, newValue) {
+            const digitEl = digitCards[key];
+            if (currentDigits[key] === newValue) return;
+
+            // Animate out
+            digitEl.classList.add('rolling-out');
+
+            setTimeout(() => {
+                // Update value
+                digitEl.textContent = newValue;
+                digitEl.classList.remove('rolling-out');
+                digitEl.classList.add('rolling-in');
+
+                setTimeout(() => {
+                    digitEl.classList.remove('rolling-in');
+                }, 300);
+            }, 300);
+
+            currentDigits[key] = newValue;
+        }
+
+        function updateClock() {
+            const now = new Date();
+            const hours = String(now.getHours()).padStart(2, '0');
+            const minutes = String(now.getMinutes()).padStart(2, '0');
+            const seconds = String(now.getSeconds()).padStart(2, '0');
+
+            updateDigit('hour1', hours[0]);
+            updateDigit('hour2', hours[1]);
+            updateDigit('min1', minutes[0]);
+            updateDigit('min2', minutes[1]);
+            updateDigit('sec1', seconds[0]);
+            updateDigit('sec2', seconds[1]);
+
+            // Update date
+            const weekdays = ['週日', '週一', '週二', '週三', '週四', '週五', '週六'];
+            const month = now.getMonth() + 1;
+            const day = now.getDate();
+            const weekday = weekdays[now.getDay()];
+            document.getElementById('date').textContent = `${month}月${day}日 ${weekday}`;
+        }
+
+        function initClock() {
+            const now = new Date();
+            const hours = String(now.getHours()).padStart(2, '0');
+            const minutes = String(now.getMinutes()).padStart(2, '0');
+            const seconds = String(now.getSeconds()).padStart(2, '0');
+
+            digitCards.hour1.textContent = hours[0];
+            digitCards.hour2.textContent = hours[1];
+            digitCards.min1.textContent = minutes[0];
+            digitCards.min2.textContent = minutes[1];
+            digitCards.sec1.textContent = seconds[0];
+            digitCards.sec2.textContent = seconds[1];
+
+            currentDigits.hour1 = hours[0];
+            currentDigits.hour2 = hours[1];
+            currentDigits.min1 = minutes[0];
+            currentDigits.min2 = minutes[1];
+            currentDigits.sec1 = seconds[0];
+            currentDigits.sec2 = seconds[1];
+        }
+
+        // ===== WEATHER MODULE =====
+        const weatherIcons = {
+            '01d': '☀️', '01n': '🌙',
+            '02d': '⛅', '02n': '☁️',
+            '03d': '☁️', '03n': '☁️',
+            '04d': '☁️', '04n': '☁️',
+            '09d': '🌧️', '09n': '🌧️',
+            '10d': '🌦️', '10n': '🌧️',
+            '11d': '⛈️', '11n': '⛈️',
+            '13d': '❄️', '13n': '❄️',
+            '50d': '🌫️', '50n': '🌫️',
+        };
+
+        async function fetchWeather() {
+            if (!CONFIG.WEATHER_API_KEY) {
+                const hour = new Date().getHours();
+                const isNight = hour < 6 || hour > 18;
+                updateWeatherDisplay({
+                    temp: 18, feels_like: 16, humidity: 75,
+                    wind_speed: 3.2, pressure: 1015,
+                    description: isNight ? '晴朗' : '多雲',
+                    icon: isNight ? '01n' : '02d'
+                });
+                return;
+            }
+
+            try {
+                const url = `https://api.openweathermap.org/data/2.5/weather?lat=${CONFIG.LAT}&lon=${CONFIG.LON}&appid=${CONFIG.WEATHER_API_KEY}&units=metric&lang=zh_tw`;
+                const res = await fetch(url);
+                const data = await res.json();
+                updateWeatherDisplay({
+                    temp: Math.round(data.main.temp),
+                    feels_like: Math.round(data.main.feels_like),
+                    humidity: data.main.humidity,
+                    wind_speed: data.wind.speed,
+                    pressure: data.main.pressure,
+                    description: data.weather[0].description,
+                    icon: data.weather[0].icon
+                });
+            } catch (err) {
+                console.error('Weather fetch error:', err);
+            }
+        }
+
+        function updateWeatherDisplay(weather) {
+            const icon = weatherIcons[weather.icon] || '🌡️';
+            document.getElementById('weatherIcon').textContent = icon;
+            document.getElementById('weatherTemp').textContent = `${weather.temp}°`;
+            document.getElementById('weatherCardIcon').textContent = icon;
+            document.getElementById('weatherCardTemp').textContent = `${weather.temp}°C`;
+            document.getElementById('weatherCardDesc').textContent = weather.description;
+            document.getElementById('feelsLike').textContent = `${weather.feels_like}°`;
+            document.getElementById('humidity').textContent = `${weather.humidity}%`;
+            document.getElementById('windSpeed').textContent = `${weather.wind_speed} m/s`;
+            document.getElementById('pressure').textContent = `${weather.pressure} hPa`;
+        }
+
+        // ===== NEWS MODULE =====
+        let newsItems = [];
+        let currentNewsDisplayIndex = 0;
+
+        function extractTextContent(element, tagName) {
+            if (!element) return '';
+            const node = element.querySelector(tagName);
+            if (!node) return '';
+            // Handle CDATA sections and text content
+            let text = node.textContent || '';
+            // Remove CDATA wrapper if present
+            text = text.replace(/^\s*<!\[CDATA\[/, '').replace(/\]\]>\s*$/, '');
+            return text.trim();
+        }
+
+        function formatNewsDate(pubDate) {
+            const now = new Date();
+            if (!pubDate) {
+                // Use current date/time as fallback
+                return now.toLocaleString('zh-TW', {
+                    month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit'
+                });
+            }
+
+            const date = new Date(pubDate);
+            // Check if date is valid
+            if (isNaN(date.getTime())) {
+                return now.toLocaleString('zh-TW', {
+                    month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit'
+                });
+            }
+
+            return date.toLocaleString('zh-TW', {
+                month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit'
+            });
+        }
+
+        async function fetchNews() {
+            const sources = CONFIG.NEWS_SOURCES;
+            for (let i = 0; i < sources.length; i++) {
+                const source = sources[i];
+                try {
+                    const url = CONFIG.CORS_PROXY ? CONFIG.CORS_PROXY + encodeURIComponent(source.url) : source.url;
+                    const res = await fetch(url);
+                    const text = await res.text();
+                    const parser = new DOMParser();
+                    const xml = parser.parseFromString(text, 'text/xml');
+                    const items = xml.querySelectorAll('item');
+
+                    if (items.length > 0) {
+                        newsItems = [];
+                        const count = Math.min(items.length, 5);
+                        for (let j = 0; j < count; j++) {
+                            const item = items[j];
+                            let title = extractTextContent(item, 'title');
+                            if (!title || title.length < 2) title = '最新新聞';
+
+                            let desc = extractTextContent(item, 'description');
+                            desc = desc.replace(/<[^>]*>/g, '').trim();
+                            if (!desc) desc = '點擊查看更多內容';
+
+                            const pubDate = extractTextContent(item, 'pubDate');
+
+                            newsItems.push({
+                                source: source.name,
+                                title: title,
+                                desc: desc.length > 100 ? desc.substring(0, 100) + '...' : desc,
+                                time: formatNewsDate(pubDate)
+                            });
+                        }
+                        displayNewsItem(0);
+                        return;
+                    }
+                } catch (err) {
+                    console.error(`News error (${source.name}):`, err);
+                }
+            }
+            newsItems = [{ source: '新聞', title: '新聞暫時無法載入', desc: '請檢查網路連線', time: formatNewsDate(null) }];
+            displayNewsItem(0);
+        }
+
+        function displayNewsItem(index) {
+            if (newsItems.length === 0) return;
+            const news = newsItems[index % newsItems.length];
+            document.getElementById('newsSource').textContent = news.source;
+            document.getElementById('newsTitle').textContent = news.title;
+            document.getElementById('newsDesc').textContent = news.desc;
+            document.getElementById('newsTime').textContent = news.time;
+        }
+
+        function nextNewsItem() {
+            if (newsItems.length > 1) {
+                currentNewsDisplayIndex = (currentNewsDisplayIndex + 1) % newsItems.length;
+                displayNewsItem(currentNewsDisplayIndex);
+            }
+        }
+
+        // ===== EARTHQUAKE MODULE =====
+        async function fetchEarthquake() {
+            if (!CONFIG.CWA_API_KEY) {
+                updateEarthquakeDisplay({
+                    intensity: 3, time: '2025/12/23 14:22',
+                    location: '花蓮縣近海', magnitude: 4.8, depth: 15,
+                    area: '花蓮縣、宜蘭縣、南投縣'
+                });
+                return;
+            }
+
+            try {
+                const url = `https://opendata.cwa.gov.tw/api/v1/rest/datastore/E-A0015-001?Authorization=${CONFIG.CWA_API_KEY}&format=JSON&limit=1`;
+                const res = await fetch(url);
+                const data = await res.json();
+                if (data.records?.Earthquake?.length > 0) {
+                    const eq = data.records.Earthquake[0];
+                    const info = eq.EarthquakeInfo;
+                    const intensity = eq.Intensity?.ShakingArea?.[0]?.AreaIntensity || '-';
+                    updateEarthquakeDisplay({
+                        intensity: parseInt(intensity) || intensity,
+                        time: info.OriginTime,
+                        location: info.Epicenter?.Location || '--',
+                        magnitude: info.EarthquakeMagnitude?.MagnitudeValue || '--',
+                        depth: info.FocalDepth || '--',
+                        area: eq.Intensity?.ShakingArea?.slice(0, 3).map(a => a.CountyName).join(', ') || '--'
+                    });
+                }
+            } catch (err) {
+                console.error('Earthquake error:', err);
+            }
+        }
+
+        function updateEarthquakeDisplay(eq) {
+            document.getElementById('eqIntensity').textContent = eq.intensity;
+            document.getElementById('eqTime').textContent = eq.time;
+            document.getElementById('eqLocation').textContent = eq.location;
+            document.getElementById('eqMagnitude').textContent = `M${eq.magnitude} / ${eq.depth}km`;
+            document.getElementById('eqArea').textContent = eq.area;
+            const indicator = document.getElementById('seismicIndicator');
+            indicator.className = 'seismic-indicator';
+            if (typeof eq.intensity === 'number') {
+                indicator.classList.add(`level-${Math.min(eq.intensity, 7)}`);
+            } else {
+                indicator.classList.add('level-1');
+            }
+        }
+
+        // ===== CARD CAROUSEL =====
+        // Carousel sequence: news1, news2, news3, weather, earthquake, repeat
+        let carouselStep = 0;
+
+        function showCard(cardId) {
+            const cardIds = ['newsCard', 'weatherCard', 'earthquakeCard'];
+            cardIds.forEach((id) => {
+                const card = document.getElementById(id);
+                if (id === cardId) {
+                    card.style.display = 'block';
+                    card.style.animation = 'none';
+                    card.offsetHeight;
+                    card.style.animation = 'fadeIn 0.5s ease';
+                } else {
+                    card.style.display = 'none';
+                }
+            });
+            // Update indicators (news=0, weather=1, earthquake=2)
+            const indicatorIndex = cardId === 'newsCard' ? 0 : cardId === 'weatherCard' ? 1 : 2;
+            document.querySelectorAll('.indicator').forEach((el, i) => {
+                el.classList.toggle('active', i === indicatorIndex);
+            });
+        }
+
+        function nextCarouselStep() {
+            // Sequence: 0=news1, 1=news2, 2=news3, 3=weather, 4=earthquake
+            const totalSteps = newsItems.length + 2; // 3 news + weather + earthquake = 5
+            carouselStep = (carouselStep + 1) % totalSteps;
+
+            if (carouselStep < newsItems.length) {
+                // Show news item
+                displayNewsItem(carouselStep);
+                showCard('newsCard');
+            } else if (carouselStep === newsItems.length) {
+                // Show weather
+                showCard('weatherCard');
+            } else {
+                // Show earthquake
+                showCard('earthquakeCard');
+            }
+        }
+
+        // ===== INIT =====
+        function init() {
+            initClock();
+            setInterval(updateClock, 1000);
+            fetchWeather();
+            fetchNews();
+            fetchEarthquake();
+            setInterval(fetchWeather, 600000);
+            setInterval(fetchNews, 300000);
+            setInterval(fetchEarthquake, 300000);
+            showCard('newsCard');
+            setInterval(nextCarouselStep, CONFIG.CARD_INTERVAL);
+            console.log('🕐 Smart Clock Dashboard 已啟動');
+        }
+
+        init();
+    </script>
+</body>
+
+</html>
