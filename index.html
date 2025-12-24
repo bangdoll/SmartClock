@@ -226,7 +226,7 @@
         }
 
         .info-card {
-            background: linear-gradient(135deg, rgba(42, 42, 46, 0.95), rgba(42, 42, 46, 0.8));
+            background: var(--bg-card);
             border-radius: var(--border-radius);
             padding: 1.5rem;
             position: relative;
@@ -243,7 +243,11 @@
             content: '';
             position: absolute;
             inset: 0;
-            background: linear-gradient(135deg, rgba(0, 0, 0, 0.7), rgba(0, 0, 0, 0.4));
+            background: linear-gradient(135deg, rgba(0, 0, 0, 0.6), rgba(0, 0, 0, 0.3));
+        }
+
+        [data-theme="light"] .info-card.with-bg::before {
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.85), rgba(255, 255, 255, 0.7));
         }
 
         .card-content {
