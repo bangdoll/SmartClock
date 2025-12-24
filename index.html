@@ -1263,7 +1263,7 @@
         // Carousel sequence: news1, news2, news3, weather, earthquake, calendar, repeat
         let carouselStep = 0;
         let carouselIntervalId = null;
-        const CAROUSEL_PAUSED = true; // 暫停輪播以便調試 Calendar
+        const CAROUSEL_PAUSED = false; // Calendar 已修復，恢復輪播
 
         function showCard(cardId) {
             const cardIds = ['newsCard', 'weatherCard', 'earthquakeCard', 'calendarCard'];
