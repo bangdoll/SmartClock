@@ -1182,10 +1182,15 @@
             const container = document.getElementById('calendarEvents');
             const dateEl = document.getElementById('calendarDate');
 
+            console.log('[Calendar Debug] updateCalendarDisplay called');
+            console.log('[Calendar Debug] isGoogleSignedIn:', isGoogleSignedIn);
+            console.log('[Calendar Debug] calendarEvents:', calendarEvents);
+
             const now = new Date();
             dateEl.textContent = `${now.getMonth() + 1}月${now.getDate()}日 行程`;
 
             if (!isGoogleSignedIn) {
+                console.log('[Calendar Debug] Not signed in, showing login prompt');
                 container.innerHTML = `
                     <div class="no-events">
                         <div class="no-events-icon">📅</div>
@@ -1231,6 +1236,8 @@
         // ===== CARD CAROUSEL =====
         // Carousel sequence: news1, news2, news3, weather, earthquake, calendar, repeat
         let carouselStep = 0;
+        let carouselIntervalId = null;
+        const CAROUSEL_PAUSED = true; // 暫停輪播以便調試 Calendar
 
         function showCard(cardId) {
             const cardIds = ['newsCard', 'weatherCard', 'earthquakeCard', 'calendarCard'];
@@ -1311,8 +1318,15 @@
                 const token = localStorage.getItem('google_access_token');
                 if (token) fetchCalendarEvents(token);
             }, 300000); // Refresh calendar every 5 mins
-            showCard('newsCard');
-            setInterval(nextCarouselStep, CONFIG.CARD_INTERVAL);
+
+            // 暫停輪播期間，直接顯示 Calendar 卡片以便調試
+            if (CAROUSEL_PAUSED) {
+                showCard('calendarCard');
+                console.log('🔧 輪播已暫停，顯示 Calendar 卡片進行調試');
+            } else {
+                showCard('newsCard');
+                carouselIntervalId = setInterval(nextCarouselStep, CONFIG.CARD_INTERVAL);
+            }
             console.log('🕐 Smart Clock Dashboard 已啟動（含 Google Calendar 整合）');
         }
 
