@@ -28,15 +28,21 @@
 - 顯示震度、位置、規模、深度
 - 視覺化震度指示器
 
+### 📅 Google Calendar 整合
+- OAuth 2.0 安全登入
+- 自動顯示今日行程
+- 支援登入/登出切換
+- 完整的錯誤處理與狀態顯示
+
 ## 🔄 輪播機制
 
 儀表板會自動輪播以下內容：
 
 ```
-新聞 1 → 新聞 2 → 新聞 3 → 新聞 4 → 新聞 5 → 天氣 → 地震 → (循環)
+新聞 1 → 新聞 2 → 新聞 3 → 日曆 → 新聞 4 → 新聞 5 → 天氣 → 地震 → (循環)
 ```
 
-每張卡片顯示 **10 秒**，完整一輪約 **70 秒**。
+每張卡片顯示 **10 秒**，完整一輪約 **80 秒**。
 
 ## 🛠️ 技術架構
 
@@ -45,6 +51,7 @@
   - RSS Feed（智流新聞）
   - OpenWeatherMap API（天氣）
   - 中央氣象署 API（地震）
+  - Google Calendar API（行事曆）
 - **部署**: Vercel
 
 ## 🚀 快速開始
@@ -70,6 +77,7 @@ npx http-server -p 8080
 const CONFIG = {
     WEATHER_API_KEY: 'your-openweathermap-api-key',
     CWA_API_KEY: 'your-cwa-api-key',
+    GOOGLE_CLIENT_ID: 'your-google-client-id',
     LAT: 25.0330,  // 緯度
     LON: 121.5654, // 經度
     CARD_INTERVAL: 10000, // 卡片切換間隔（毫秒）
