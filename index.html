@@ -1148,6 +1148,8 @@
             }
         }
 
+        let calendarError = null; // Track API errors
+
         async function fetchCalendarEvents(token) {
             try {
                 const now = new Date();
@@ -1163,6 +1165,7 @@
                 );
 
                 if (res.ok) {
+                    calendarError = null;
                     const data = await res.json();
                     calendarEvents = (data.items || []).map(event => ({
                         title: event.summary || '(無標題)',
@@ -1171,10 +1174,21 @@
                         location: event.location || '',
                         isAllDay: !event.start?.dateTime
                     }));
-                    updateCalendarDisplay();
+                    console.log('[Calendar] Successfully fetched', calendarEvents.length, 'events');
+                } else {
+                    // Handle API errors (like 403 when API not enabled)
+                    const errorData = await res.json().catch(() => ({}));
+                    const errorMsg = errorData.error?.message || `HTTP ${res.status}`;
+                    console.error('[Calendar] API Error:', errorMsg);
+                    calendarError = errorMsg;
+                    calendarEvents = [];
                 }
+                updateCalendarDisplay();
             } catch (err) {
                 console.error('Calendar fetch error:', err);
+                calendarError = err.message || '連接錯誤';
+                calendarEvents = [];
+                updateCalendarDisplay();
             }
         }
 
@@ -1195,6 +1209,18 @@
                     <div class="no-events">
                         <div class="no-events-icon">📅</div>
                         <div>請先登入以查看行程</div>
+                    </div>`;
+                return;
+            }
+
+            // Handle API errors
+            if (calendarError) {
+                console.log('[Calendar Debug] API error:', calendarError);
+                container.innerHTML = `
+                    <div class="no-events">
+                        <div class="no-events-icon">⚠️</div>
+                        <div style="font-size: 0.85rem;">API 錯誤</div>
+                        <div style="font-size: 0.7rem; opacity: 0.7; margin-top: 0.3rem;">${calendarError.substring(0, 50)}</div>
                     </div>`;
                 return;
             }
