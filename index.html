@@ -485,6 +485,102 @@
             color: var(--text-secondary);
             font-size: 1rem;
         }
+
+        /* ===== CALENDAR CARD ===== */
+        .calendar-card-content {
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+            height: 100%;
+        }
+
+        .calendar-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .calendar-date {
+            font-size: 1.25rem;
+            font-weight: 600;
+        }
+
+        .calendar-auth-btn {
+            background: var(--accent-blue);
+            color: white;
+            border: none;
+            padding: 0.5rem 1rem;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 0.85rem;
+            font-weight: 500;
+            transition: all 0.2s ease;
+        }
+
+        .calendar-auth-btn:hover {
+            transform: scale(1.05);
+            background: #3a8eef;
+        }
+
+        .calendar-auth-btn.signed-in {
+            background: rgba(255, 255, 255, 0.1);
+            font-size: 0.75rem;
+        }
+
+        .calendar-events {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+            overflow-y: auto;
+        }
+
+        .calendar-event {
+            display: flex;
+            gap: 0.75rem;
+            padding: 0.75rem;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 8px;
+            border-left: 3px solid var(--accent-blue);
+        }
+
+        .event-time {
+            min-width: 50px;
+            font-size: 0.85rem;
+            font-weight: 500;
+            color: var(--accent-blue);
+        }
+
+        .event-details {
+            flex: 1;
+        }
+
+        .event-title {
+            font-weight: 500;
+            font-size: 0.9rem;
+            margin-bottom: 0.15rem;
+        }
+
+        .event-location {
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+        }
+
+        .no-events {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100%;
+            text-align: center;
+            color: var(--text-secondary);
+        }
+
+        .no-events-icon {
+            font-size: 2.5rem;
+            margin-bottom: 0.5rem;
+            opacity: 0.5;
+        }
     </style>
 </head>
 
@@ -637,14 +733,41 @@
                     </div>
                 </div>
             </div>
+
+            <!-- Calendar Card -->
+            <div class="info-card" id="calendarCard" style="display: none;">
+                <div class="card-content">
+                    <div class="card-header">
+                        <span class="card-source">📅 Google Calendar</span>
+                    </div>
+                    <div class="calendar-card-content">
+                        <div class="calendar-header">
+                            <span class="calendar-date" id="calendarDate">今日行程</span>
+                            <button class="calendar-auth-btn" id="calendarAuthBtn" onclick="handleCalendarAuth()">登入
+                                Google</button>
+                        </div>
+                        <div class="calendar-events" id="calendarEvents">
+                            <div class="no-events">
+                                <div class="no-events-icon">📅</div>
+                                <div>請先登入以查看行程</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
 
         <div class="card-indicators" id="indicators">
             <div class="indicator active"></div>
             <div class="indicator"></div>
             <div class="indicator"></div>
+            <div class="indicator"></div>
         </div>
     </div>
+
+    <!-- Google Identity Services -->
+    <script src="https://accounts.google.com/gsi/client" async defer></script>
+    <script src="https://apis.google.com/js/api.js" async defer></script>
 
     <script>
         // ===== CONFIGURATION =====
@@ -658,6 +781,10 @@
             NEWS_SOURCES: [
                 { name: '智流 Smart Flow', url: 'https://smart-flow.rd.coach/feed.xml' },
             ],
+            // Google Calendar API
+            GOOGLE_CLIENT_ID: '275272258544-2pt4immtafkm66ahncd8b7bcdrj97l9u.apps.googleusercontent.com',
+            GOOGLE_API_KEY: '', // Optional: for public calendars
+            GOOGLE_SCOPES: 'https://www.googleapis.com/auth/calendar.readonly',
         };
 
         // ===== CLOCK MODULE =====
@@ -941,12 +1068,172 @@
             }
         }
 
+        // ===== GOOGLE CALENDAR MODULE =====
+        let googleTokenClient = null;
+        let isGoogleSignedIn = false;
+        let calendarEvents = [];
+
+        function initGoogleAuth() {
+            // Wait for Google Identity Services to load
+            if (typeof google === 'undefined' || !google.accounts) {
+                setTimeout(initGoogleAuth, 100);
+                return;
+            }
+
+            googleTokenClient = google.accounts.oauth2.initTokenClient({
+                client_id: CONFIG.GOOGLE_CLIENT_ID,
+                scope: CONFIG.GOOGLE_SCOPES,
+                callback: (response) => {
+                    if (response.access_token) {
+                        isGoogleSignedIn = true;
+                        localStorage.setItem('google_access_token', response.access_token);
+                        updateCalendarAuthUI();
+                        fetchCalendarEvents(response.access_token);
+                    }
+                },
+            });
+
+            // Check for existing token
+            const savedToken = localStorage.getItem('google_access_token');
+            if (savedToken) {
+                // Validate token by making a test request
+                validateAndFetchEvents(savedToken);
+            }
+        }
+
+        async function validateAndFetchEvents(token) {
+            try {
+                const res = await fetch('https://www.googleapis.com/calendar/v3/users/me/calendarList', {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                if (res.ok) {
+                    isGoogleSignedIn = true;
+                    updateCalendarAuthUI();
+                    fetchCalendarEvents(token);
+                } else {
+                    localStorage.removeItem('google_access_token');
+                }
+            } catch (err) {
+                console.error('Token validation error:', err);
+                localStorage.removeItem('google_access_token');
+            }
+        }
+
+        function handleCalendarAuth() {
+            if (isGoogleSignedIn) {
+                // Sign out
+                google.accounts.oauth2.revoke(localStorage.getItem('google_access_token'), () => {
+                    isGoogleSignedIn = false;
+                    calendarEvents = [];
+                    localStorage.removeItem('google_access_token');
+                    updateCalendarAuthUI();
+                    updateCalendarDisplay();
+                });
+            } else {
+                // Sign in
+                if (googleTokenClient) {
+                    googleTokenClient.requestAccessToken();
+                }
+            }
+        }
+
+        function updateCalendarAuthUI() {
+            const btn = document.getElementById('calendarAuthBtn');
+            if (isGoogleSignedIn) {
+                btn.textContent = '登出';
+                btn.classList.add('signed-in');
+            } else {
+                btn.textContent = '登入 Google';
+                btn.classList.remove('signed-in');
+            }
+        }
+
+        async function fetchCalendarEvents(token) {
+            try {
+                const now = new Date();
+                const endOfDay = new Date(now);
+                endOfDay.setHours(23, 59, 59, 999);
+
+                const timeMin = now.toISOString();
+                const timeMax = endOfDay.toISOString();
+
+                const res = await fetch(
+                    `https://www.googleapis.com/calendar/v3/calendars/primary/events?timeMin=${timeMin}&timeMax=${timeMax}&singleEvents=true&orderBy=startTime&maxResults=5`,
+                    { headers: { 'Authorization': `Bearer ${token}` } }
+                );
+
+                if (res.ok) {
+                    const data = await res.json();
+                    calendarEvents = (data.items || []).map(event => ({
+                        title: event.summary || '(無標題)',
+                        startTime: event.start?.dateTime || event.start?.date,
+                        endTime: event.end?.dateTime || event.end?.date,
+                        location: event.location || '',
+                        isAllDay: !event.start?.dateTime
+                    }));
+                    updateCalendarDisplay();
+                }
+            } catch (err) {
+                console.error('Calendar fetch error:', err);
+            }
+        }
+
+        function updateCalendarDisplay() {
+            const container = document.getElementById('calendarEvents');
+            const dateEl = document.getElementById('calendarDate');
+
+            const now = new Date();
+            dateEl.textContent = `${now.getMonth() + 1}月${now.getDate()}日 行程`;
+
+            if (!isGoogleSignedIn) {
+                container.innerHTML = `
+                    <div class="no-events">
+                        <div class="no-events-icon">📅</div>
+                        <div>請先登入以查看行程</div>
+                    </div>`;
+                return;
+            }
+
+            if (calendarEvents.length === 0) {
+                container.innerHTML = `
+                    <div class="no-events">
+                        <div class="no-events-icon">✨</div>
+                        <div>今日無行程</div>
+                    </div>`;
+                return;
+            }
+
+            container.innerHTML = calendarEvents.map(event => {
+                const timeStr = event.isAllDay ? '整天' : formatEventTime(event.startTime);
+                return `
+                    <div class="calendar-event">
+                        <div class="event-time">${timeStr}</div>
+                        <div class="event-details">
+                            <div class="event-title">${escapeHtml(event.title)}</div>
+                            ${event.location ? `<div class="event-location">📍 ${escapeHtml(event.location)}</div>` : ''}
+                        </div>
+                    </div>`;
+            }).join('');
+        }
+
+        function formatEventTime(isoString) {
+            if (!isoString) return '--';
+            const date = new Date(isoString);
+            return date.toLocaleTimeString('zh-TW', { hour: '2-digit', minute: '2-digit' });
+        }
+
+        function escapeHtml(str) {
+            const div = document.createElement('div');
+            div.textContent = str;
+            return div.innerHTML;
+        }
+
         // ===== CARD CAROUSEL =====
-        // Carousel sequence: news1, news2, news3, weather, earthquake, repeat
+        // Carousel sequence: news1, news2, news3, weather, earthquake, calendar, repeat
         let carouselStep = 0;
 
         function showCard(cardId) {
-            const cardIds = ['newsCard', 'weatherCard', 'earthquakeCard'];
+            const cardIds = ['newsCard', 'weatherCard', 'earthquakeCard', 'calendarCard'];
             cardIds.forEach((id) => {
                 const card = document.getElementById(id);
                 if (id === cardId) {
@@ -958,16 +1245,17 @@
                     card.style.display = 'none';
                 }
             });
-            // Update indicators (news=0, weather=1, earthquake=2)
-            const indicatorIndex = cardId === 'newsCard' ? 0 : cardId === 'weatherCard' ? 1 : 2;
+            // Update indicators (news=0, weather=1, earthquake=2, calendar=3)
+            const indicatorMap = { newsCard: 0, weatherCard: 1, earthquakeCard: 2, calendarCard: 3 };
+            const indicatorIndex = indicatorMap[cardId] ?? 0;
             document.querySelectorAll('.indicator').forEach((el, i) => {
                 el.classList.toggle('active', i === indicatorIndex);
             });
         }
 
         function nextCarouselStep() {
-            // Sequence: 0=news1, 1=news2, 2=news3, 3=weather, 4=earthquake
-            const totalSteps = newsItems.length + 2; // 3 news + weather + earthquake = 5
+            // Sequence: 0=news1, 1=news2, 2=news3, 3=weather, 4=earthquake, 5=calendar
+            const totalSteps = newsItems.length + 3; // news + weather + earthquake + calendar
             carouselStep = (carouselStep + 1) % totalSteps;
 
             if (carouselStep < newsItems.length) {
@@ -977,9 +1265,12 @@
             } else if (carouselStep === newsItems.length) {
                 // Show weather
                 showCard('weatherCard');
-            } else {
+            } else if (carouselStep === newsItems.length + 1) {
                 // Show earthquake
                 showCard('earthquakeCard');
+            } else {
+                // Show calendar
+                showCard('calendarCard');
             }
         }
 
@@ -1008,6 +1299,7 @@
         function init() {
             initTheme();
             initClock();
+            initGoogleAuth(); // Initialize Google Calendar OAuth
             setInterval(updateClock, 1000);
             fetchWeather();
             fetchNews();
@@ -1015,9 +1307,13 @@
             setInterval(fetchWeather, 600000);
             setInterval(fetchNews, 300000);
             setInterval(fetchEarthquake, 300000);
+            setInterval(() => {
+                const token = localStorage.getItem('google_access_token');
+                if (token) fetchCalendarEvents(token);
+            }, 300000); // Refresh calendar every 5 mins
             showCard('newsCard');
             setInterval(nextCarouselStep, CONFIG.CARD_INTERVAL);
-            console.log('🕐 Smart Clock Dashboard 已啟動');
+            console.log('🕐 Smart Clock Dashboard 已啟動（含 Google Calendar 整合）');
         }
 
         init();
