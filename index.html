@@ -1071,6 +1071,7 @@
         // ===== GOOGLE CALENDAR MODULE =====
         let googleTokenClient = null;
         let isGoogleSignedIn = false;
+        let isCalendarLoading = false;
         let calendarEvents = [];
 
         function initGoogleAuth() {
@@ -1097,11 +1098,17 @@
                 },
             });
 
-            // Check for existing token
+            // Check for existing token - OPTIMISTIC UI
             const savedToken = localStorage.getItem('google_access_token');
             const expiresAt = parseInt(localStorage.getItem('google_token_expires_at') || '0');
 
             if (savedToken) {
+                // Immediately show as signed in while we validate
+                isGoogleSignedIn = true;
+                isCalendarLoading = true;
+                updateCalendarAuthUI();
+                updateCalendarDisplay();
+
                 if (Date.now() < expiresAt) {
                     // Token still valid
                     console.log('[Calendar] Using saved token, expires:', new Date(expiresAt).toLocaleString());
@@ -1134,13 +1141,22 @@
                     console.log('[Calendar] Token invalid (401), attempting refresh...');
                     silentRefreshToken();
                 } else {
+                    // Other error, reset login state
+                    isGoogleSignedIn = false;
+                    isCalendarLoading = false;
                     localStorage.removeItem('google_access_token');
                     localStorage.removeItem('google_token_expires_at');
+                    updateCalendarAuthUI();
+                    updateCalendarDisplay();
                 }
             } catch (err) {
                 console.error('Token validation error:', err);
+                isGoogleSignedIn = false;
+                isCalendarLoading = false;
                 localStorage.removeItem('google_access_token');
                 localStorage.removeItem('google_token_expires_at');
+                updateCalendarAuthUI();
+                updateCalendarDisplay();
             }
         }
 
@@ -1210,11 +1226,13 @@
                     calendarError = errorMsg;
                     calendarEvents = [];
                 }
+                isCalendarLoading = false;
                 updateCalendarDisplay();
             } catch (err) {
                 console.error('Calendar fetch error:', err);
                 calendarError = err.message || '連接錯誤';
                 calendarEvents = [];
+                isCalendarLoading = false;
                 updateCalendarDisplay();
             }
         }
@@ -1236,6 +1254,16 @@
                     <div class="no-events">
                         <div class="no-events-icon">📅</div>
                         <div>請先登入以查看行程</div>
+                    </div>`;
+                return;
+            }
+
+            // Show loading state while validating token
+            if (isCalendarLoading) {
+                container.innerHTML = `
+                    <div class="no-events">
+                        <div class="no-events-icon">⏳</div>
+                        <div>載入行程中...</div>
                     </div>`;
                 return;
             }
