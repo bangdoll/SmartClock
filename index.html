@@ -441,7 +441,13 @@
             height: 8px;
             border-radius: 50%;
             background: rgba(255, 255, 255, 0.3);
-            transition: background 0.3s ease;
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+
+        .indicator:hover {
+            background: rgba(255, 255, 255, 0.6);
+            transform: scale(1.3);
         }
 
         .indicator.active {
@@ -1851,6 +1857,23 @@
                 showCard('newsCard');
                 carouselIntervalId = setInterval(nextCarouselStep, CONFIG.CARD_INTERVAL);
             }
+
+            // Add click handlers to indicators
+            const indicatorCards = ['newsCard', 'weatherCard', 'earthquakeCard', 'calendarCard'];
+            const indicatorSteps = [0, 6, 7, 3]; // Map to carousel steps
+            document.querySelectorAll('.indicator').forEach((el, i) => {
+                el.addEventListener('click', () => {
+                    // Reset carousel timer
+                    if (carouselIntervalId) {
+                        clearInterval(carouselIntervalId);
+                        carouselIntervalId = setInterval(nextCarouselStep, CONFIG.CARD_INTERVAL);
+                    }
+                    // Navigate to the selected card
+                    carouselStep = indicatorSteps[i];
+                    goToCarouselStep(carouselStep);
+                });
+            });
+
             console.log('🕐 Smart Clock Dashboard 已啟動（含 Google Calendar 整合）');
         }
 
