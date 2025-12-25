@@ -880,34 +880,73 @@
         };
 
         async function fetchWeather() {
-            if (!CONFIG.WEATHER_API_KEY) {
-                const hour = new Date().getHours();
-                const isNight = hour < 6 || hour > 18;
-                updateWeatherDisplay({
-                    temp: 18, feels_like: 16, humidity: 75,
-                    wind_speed: 3.2, pressure: 1015,
-                    description: isNight ? '晴朗' : '多雲',
-                    icon: isNight ? '01n' : '02d'
-                });
-                return;
-            }
-
             try {
-                const url = `https://api.openweathermap.org/data/2.5/weather?lat=${CONFIG.LAT}&lon=${CONFIG.LON}&appid=${CONFIG.WEATHER_API_KEY}&units=metric&lang=zh_tw`;
+                // Open-Meteo free API (no API key required)
+                const url = `https://api.open-meteo.com/v1/forecast?latitude=${CONFIG.LAT}&longitude=${CONFIG.LON}&current=temperature_2m,relative_humidity_2m,apparent_temperature,weather_code,wind_speed_10m,surface_pressure&timezone=Asia%2FTaipei`;
                 const res = await fetch(url);
                 const data = await res.json();
-                updateWeatherDisplay({
-                    temp: Math.round(data.main.temp),
-                    feels_like: Math.round(data.main.feels_like),
-                    humidity: data.main.humidity,
-                    wind_speed: data.wind.speed,
-                    pressure: data.main.pressure,
-                    description: data.weather[0].description,
-                    icon: data.weather[0].icon
-                });
+
+                if (data.current) {
+                    const current = data.current;
+                    const weatherCode = current.weather_code;
+
+                    // Map WMO weather codes to descriptions and icons
+                    const weatherInfo = getWeatherInfo(weatherCode);
+
+                    updateWeatherDisplay({
+                        temp: Math.round(current.temperature_2m),
+                        feels_like: Math.round(current.apparent_temperature),
+                        humidity: current.relative_humidity_2m,
+                        wind_speed: (current.wind_speed_10m / 3.6).toFixed(1), // km/h to m/s
+                        pressure: Math.round(current.surface_pressure),
+                        description: weatherInfo.description,
+                        icon: weatherInfo.icon
+                    });
+                    console.log('[Weather] Fetched from Open-Meteo:', current.temperature_2m + '°C');
+                }
             } catch (err) {
                 console.error('Weather fetch error:', err);
+                // Fallback to placeholder
+                updateWeatherDisplay({
+                    temp: '--', feels_like: '--', humidity: '--',
+                    wind_speed: '--', pressure: '--',
+                    description: '載入失敗', icon: '01d'
+                });
             }
+        }
+
+        // WMO Weather Code to description and icon
+        function getWeatherInfo(code) {
+            const hour = new Date().getHours();
+            const isNight = hour < 6 || hour > 18;
+            const suffix = isNight ? 'n' : 'd';
+
+            const codes = {
+                0: { desc: '晴朗', icon: '01' },
+                1: { desc: '大致晴朗', icon: '01' },
+                2: { desc: '局部多雲', icon: '02' },
+                3: { desc: '多雲', icon: '03' },
+                45: { desc: '霧', icon: '50' },
+                48: { desc: '霧凇', icon: '50' },
+                51: { desc: '毛毛雨', icon: '09' },
+                53: { desc: '毛毛雨', icon: '09' },
+                55: { desc: '毛毛雨', icon: '09' },
+                61: { desc: '小雨', icon: '10' },
+                63: { desc: '中雨', icon: '10' },
+                65: { desc: '大雨', icon: '10' },
+                71: { desc: '小雪', icon: '13' },
+                73: { desc: '中雪', icon: '13' },
+                75: { desc: '大雪', icon: '13' },
+                80: { desc: '陣雨', icon: '09' },
+                81: { desc: '陣雨', icon: '09' },
+                82: { desc: '強陣雨', icon: '09' },
+                95: { desc: '雷雨', icon: '11' },
+                96: { desc: '雷雨伴冰雹', icon: '11' },
+                99: { desc: '雷雨伴大冰雹', icon: '11' }
+            };
+
+            const info = codes[code] || { desc: '未知', icon: '01' };
+            return { description: info.desc, icon: info.icon + suffix };
         }
 
         function updateWeatherDisplay(weather) {
