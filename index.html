@@ -1583,8 +1583,13 @@
                     // Cache events for instant load next time
                     localStorage.setItem('google_calendar_events', JSON.stringify(calendarEvents));
                     console.log('[Calendar] Fetched and cached', calendarEvents.length, 'events');
+                } else if (res.status === 401) {
+                    // Token expired or invalid, try silent refresh
+                    console.log('[Calendar] Token invalid (401), attempting silent refresh...');
+                    silentRefreshToken();
+                    return; // Don't update display yet, wait for refresh
                 } else {
-                    // Handle API errors (like 403 when API not enabled)
+                    // Handle other API errors (like 403 when API not enabled)
                     const errorData = await res.json().catch(() => ({}));
                     const errorMsg = errorData.error?.message || `HTTP ${res.status}`;
                     console.error('[Calendar] API Error:', errorMsg);
