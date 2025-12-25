@@ -1022,6 +1022,52 @@
 
         // ===== EARTHQUAKE MODULE =====
         // Using USGS API for Taiwan region (no API key required)
+
+        // Translate USGS location format to Traditional Chinese
+        function translateUSGSLocation(place) {
+            if (!place) return null;
+
+            // Direction translations
+            const directions = {
+                'N': '北', 'S': '南', 'E': '東', 'W': '西',
+                'NE': '東北', 'NW': '西北', 'SE': '東南', 'SW': '西南',
+                'NNE': '北北東', 'NNW': '北北西', 'SSE': '南南東', 'SSW': '南南西',
+                'ENE': '東北東', 'ESE': '東南東', 'WNW': '西北西', 'WSW': '西南西'
+            };
+
+            // Taiwan city/town name translations
+            const cities = {
+                'Taipei': '台北', 'Taichung': '台中', 'Kaohsiung': '高雄',
+                'Tainan': '台南', 'Hsinchu': '新竹', 'Keelung': '基隆',
+                'Chiayi': '嘉義', 'Taitung': '台東', 'Hualien': '花蓮',
+                'Yilan': '宜蘭', 'Miaoli': '苗栗', 'Changhua': '彰化',
+                'Nantou': '南投', 'Yunlin': '雲林', 'Pingtung': '屏東',
+                'Penghu': '澎湖', 'Kinmen': '金門', 'Matsu': '馬祖',
+                'Yujing': '玉井', 'Suao': '蘇澳', 'Hengchun': '恆春',
+                'Taoyuan': '桃園', 'New Taipei': '新北',
+                'Taiwan': '台灣', 'Taiwan Region': '台灣海域'
+            };
+
+            let translated = place;
+
+            // Pattern: "81 km ESE of Yujing, Taiwan"
+            const match = place.match(/^(\d+)\s*km\s+(\w+)\s+of\s+(.+),\s*Taiwan$/i);
+            if (match) {
+                const [, distance, dir, city] = match;
+                const dirCh = directions[dir.toUpperCase()] || dir;
+                const cityCh = cities[city] || city;
+                translated = `${cityCh}${dirCh}方 ${distance} 公里`;
+            } else {
+                // Just translate known words
+                for (const [en, ch] of Object.entries(cities)) {
+                    translated = translated.replace(new RegExp(en, 'gi'), ch);
+                }
+                translated = translated.replace(/, Taiwan$/i, '');
+            }
+
+            return translated;
+        }
+
         async function fetchEarthquake() {
             try {
                 // USGS API: Taiwan region (lat: 21-26, lon: 119-123)
@@ -1052,7 +1098,7 @@
                     else if (magnitude >= 4.0) intensity = 2;
 
                     // Parse location (USGS format: "81 km ESE of Yujing, Taiwan")
-                    const location = props.place || '未知位置';
+                    const location = translateUSGSLocation(props.place) || '未知位置';
 
                     updateEarthquakeDisplay({
                         intensity: intensity,
