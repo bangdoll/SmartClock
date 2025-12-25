@@ -803,9 +803,10 @@
                 min-height: 140px;
             }
 
-            /* Move theme toggle to left side to avoid blocking news */
+            /* Move theme toggle to left side, vertically centered */
             .theme-toggle {
-                top: 0.5rem;
+                top: 50%;
+                transform: translateY(-50%);
                 right: auto;
                 left: 0.5rem;
                 width: 32px;
@@ -816,6 +817,7 @@
 
             .theme-toggle:hover {
                 opacity: 1;
+                transform: translateY(-50%) scale(1.1);
             }
         }
     </style>
