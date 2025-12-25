@@ -20,12 +20,13 @@
 
 ### 🌤️ 即時天氣
 - 顯示當前溫度與天氣狀況
-- 支援 OpenWeatherMap API 整合
+- 使用 Open-Meteo 免費 API（不需 API Key）
 - 預設顯示台北天氣
 
 ### 🌋 地震資訊
-- 整合中央氣象署地震資料
+- 使用 USGS 公開 API 抓取台灣地區地震（不需 API Key）
 - 顯示震度、位置、規模、深度
+- 震央位置自動翻譯成繁體中文
 - 視覺化震度指示器
 
 ### 📅 Google Calendar 整合
@@ -43,15 +44,15 @@
 新聞 1 → 新聞 2 → 新聞 3 → 日曆 → 新聞 4 → 新聞 5 → 天氣 → 地震 → (循環)
 ```
 
-每張卡片顯示 **10 秒**，完整一輪約 **80 秒**。
+每張卡片顯示 **15 秒**，完整一輪約 **2 分鐘**。
 
 ## 🛠️ 技術架構
 
 - **Frontend**: 純 HTML + CSS + JavaScript
 - **API 整合**:
   - RSS Feed（智流新聞）
-  - OpenWeatherMap API（天氣）
-  - 中央氣象署 API（地震）
+  - Open-Meteo API（天氣，免費）
+  - USGS API（地震，免費）
   - Google Calendar API（行事曆）
 - **部署**: Vercel
 
