@@ -1753,6 +1753,74 @@
 
         document.getElementById('themeToggle').addEventListener('click', toggleTheme);
 
+        // ===== TOUCH SWIPE SUPPORT =====
+        let touchStartX = 0;
+        let touchStartY = 0;
+        let touchEndX = 0;
+        let touchEndY = 0;
+
+        function handleSwipe() {
+            const diffX = touchEndX - touchStartX;
+            const diffY = touchEndY - touchStartY;
+            const minSwipeDistance = 50;
+
+            // Only trigger if horizontal swipe is more significant than vertical
+            if (Math.abs(diffX) > Math.abs(diffY) && Math.abs(diffX) > minSwipeDistance) {
+                // Reset carousel timer on manual swipe
+                if (carouselIntervalId) {
+                    clearInterval(carouselIntervalId);
+                    carouselIntervalId = setInterval(nextCarouselStep, CONFIG.CARD_INTERVAL);
+                }
+
+                if (diffX > 0) {
+                    // Swipe right -> previous
+                    prevCarouselStep();
+                } else {
+                    // Swipe left -> next
+                    nextCarouselStep();
+                }
+            }
+        }
+
+        function prevCarouselStep() {
+            const totalSteps = 8;
+            carouselStep = (carouselStep - 1 + totalSteps) % totalSteps;
+            goToCarouselStep(carouselStep);
+        }
+
+        function goToCarouselStep(step) {
+            if (step < 3) {
+                displayNewsItem(step % newsItems.length);
+                showCard('newsCard');
+            } else if (step === 3) {
+                showCard('calendarCard');
+            } else if (step < 6) {
+                displayNewsItem((step - 1) % newsItems.length);
+                showCard('newsCard');
+            } else if (step === 6) {
+                showCard('weatherCard');
+            } else {
+                showCard('earthquakeCard');
+            }
+        }
+
+        // Add touch event listeners to info panel
+        document.addEventListener('DOMContentLoaded', () => {
+            const infoPanel = document.querySelector('.info-panel');
+            if (infoPanel) {
+                infoPanel.addEventListener('touchstart', (e) => {
+                    touchStartX = e.changedTouches[0].screenX;
+                    touchStartY = e.changedTouches[0].screenY;
+                }, { passive: true });
+
+                infoPanel.addEventListener('touchend', (e) => {
+                    touchEndX = e.changedTouches[0].screenX;
+                    touchEndY = e.changedTouches[0].screenY;
+                    handleSwipe();
+                }, { passive: true });
+            }
+        });
+
         // ===== INIT =====
         function init() {
             initTheme();
