@@ -1217,12 +1217,24 @@
             const expiresAt = parseInt(localStorage.getItem('google_token_expires_at') || '0');
 
             if (savedToken) {
-                // Immediately show as signed in while we validate
+                // Immediately show as signed in
                 isGoogleSignedIn = true;
-                isCalendarLoading = true;
+
+                // Load cached events immediately (no loading state)
+                const cachedEvents = localStorage.getItem('google_calendar_events');
+                if (cachedEvents) {
+                    try {
+                        calendarEvents = JSON.parse(cachedEvents);
+                        console.log('[Calendar] Loaded', calendarEvents.length, 'cached events');
+                    } catch (e) {
+                        calendarEvents = [];
+                    }
+                }
+
                 updateCalendarAuthUI();
                 updateCalendarDisplay();
 
+                // Then fetch fresh data in background
                 if (Date.now() < expiresAt) {
                     // Token still valid
                     console.log('[Calendar] Using saved token, expires:', new Date(expiresAt).toLocaleString());
@@ -1331,7 +1343,9 @@
                         location: event.location || '',
                         isAllDay: !event.start?.dateTime
                     }));
-                    console.log('[Calendar] Successfully fetched', calendarEvents.length, 'events');
+                    // Cache events for instant load next time
+                    localStorage.setItem('google_calendar_events', JSON.stringify(calendarEvents));
+                    console.log('[Calendar] Fetched and cached', calendarEvents.length, 'events');
                 } else {
                     // Handle API errors (like 403 when API not enabled)
                     const errorData = await res.json().catch(() => ({}));
