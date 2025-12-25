@@ -1086,7 +1086,11 @@
                 callback: (response) => {
                     if (response.access_token) {
                         isGoogleSignedIn = true;
+                        // Save token with expiry time (default 3600 seconds)
+                        const expiresAt = Date.now() + (response.expires_in || 3600) * 1000;
                         localStorage.setItem('google_access_token', response.access_token);
+                        localStorage.setItem('google_token_expires_at', expiresAt.toString());
+                        console.log('[Calendar] Token saved, expires at:', new Date(expiresAt).toLocaleString());
                         updateCalendarAuthUI();
                         fetchCalendarEvents(response.access_token);
                     }
@@ -1095,9 +1099,24 @@
 
             // Check for existing token
             const savedToken = localStorage.getItem('google_access_token');
+            const expiresAt = parseInt(localStorage.getItem('google_token_expires_at') || '0');
+
             if (savedToken) {
-                // Validate token by making a test request
-                validateAndFetchEvents(savedToken);
+                if (Date.now() < expiresAt) {
+                    // Token still valid
+                    console.log('[Calendar] Using saved token, expires:', new Date(expiresAt).toLocaleString());
+                    validateAndFetchEvents(savedToken);
+                } else {
+                    // Token expired, try silent refresh
+                    console.log('[Calendar] Token expired, attempting silent refresh...');
+                    silentRefreshToken();
+                }
+            }
+        }
+
+        function silentRefreshToken() {
+            if (googleTokenClient) {
+                googleTokenClient.requestAccessToken({ prompt: '' });
             }
         }
 
@@ -1110,12 +1129,18 @@
                     isGoogleSignedIn = true;
                     updateCalendarAuthUI();
                     fetchCalendarEvents(token);
+                } else if (res.status === 401) {
+                    // Token invalid, try silent refresh
+                    console.log('[Calendar] Token invalid (401), attempting refresh...');
+                    silentRefreshToken();
                 } else {
                     localStorage.removeItem('google_access_token');
+                    localStorage.removeItem('google_token_expires_at');
                 }
             } catch (err) {
                 console.error('Token validation error:', err);
                 localStorage.removeItem('google_access_token');
+                localStorage.removeItem('google_token_expires_at');
             }
         }
 
@@ -1125,7 +1150,9 @@
                 google.accounts.oauth2.revoke(localStorage.getItem('google_access_token'), () => {
                     isGoogleSignedIn = false;
                     calendarEvents = [];
+                    calendarError = null;
                     localStorage.removeItem('google_access_token');
+                    localStorage.removeItem('google_token_expires_at');
                     updateCalendarAuthUI();
                     updateCalendarDisplay();
                 });
