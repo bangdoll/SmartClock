@@ -1021,35 +1021,64 @@
         }
 
         // ===== EARTHQUAKE MODULE =====
+        // Using USGS API for Taiwan region (no API key required)
         async function fetchEarthquake() {
-            if (!CONFIG.CWA_API_KEY) {
-                updateEarthquakeDisplay({
-                    intensity: 3, time: '2025/12/23 14:22',
-                    location: '花蓮縣近海', magnitude: 4.8, depth: 15,
-                    area: '花蓮縣、宜蘭縣、南投縣'
-                });
-                return;
-            }
-
             try {
-                const url = `https://opendata.cwa.gov.tw/api/v1/rest/datastore/E-A0015-001?Authorization=${CONFIG.CWA_API_KEY}&format=JSON&limit=1`;
+                // USGS API: Taiwan region (lat: 21-26, lon: 119-123)
+                const url = 'https://earthquake.usgs.gov/fdsnws/event/1/query?format=geojson&minlatitude=21&maxlatitude=26&minlongitude=119&maxlongitude=123&limit=1&orderby=time';
                 const res = await fetch(url);
                 const data = await res.json();
-                if (data.records?.Earthquake?.length > 0) {
-                    const eq = data.records.Earthquake[0];
-                    const info = eq.EarthquakeInfo;
-                    const intensity = eq.Intensity?.ShakingArea?.[0]?.AreaIntensity || '-';
+
+                if (data.features && data.features.length > 0) {
+                    const eq = data.features[0];
+                    const props = eq.properties;
+                    const coords = eq.geometry.coordinates;
+                    const depth = Math.round(coords[2]);
+                    const magnitude = props.mag;
+
+                    // Convert timestamp to local time string
+                    const eqTime = new Date(props.time);
+                    const timeStr = eqTime.toLocaleString('zh-TW', {
+                        year: 'numeric', month: '2-digit', day: '2-digit',
+                        hour: '2-digit', minute: '2-digit'
+                    });
+
+                    // Estimate intensity from magnitude (rough approximation)
+                    let intensity = 1;
+                    if (magnitude >= 6.5) intensity = 6;
+                    else if (magnitude >= 6.0) intensity = 5;
+                    else if (magnitude >= 5.5) intensity = 4;
+                    else if (magnitude >= 5.0) intensity = 3;
+                    else if (magnitude >= 4.0) intensity = 2;
+
+                    // Parse location (USGS format: "81 km ESE of Yujing, Taiwan")
+                    const location = props.place || '未知位置';
+
                     updateEarthquakeDisplay({
-                        intensity: parseInt(intensity) || intensity,
-                        time: info.OriginTime,
-                        location: info.Epicenter?.Location || '--',
-                        magnitude: info.EarthquakeMagnitude?.MagnitudeValue || '--',
-                        depth: info.FocalDepth || '--',
-                        area: eq.Intensity?.ShakingArea?.slice(0, 3).map(a => a.CountyName).join(', ') || '--'
+                        intensity: intensity,
+                        time: timeStr,
+                        location: location,
+                        magnitude: magnitude,
+                        depth: depth,
+                        area: '台灣地區'
+                    });
+                    console.log('[Earthquake] Fetched from USGS:', props.title);
+                } else {
+                    // No recent earthquakes
+                    updateEarthquakeDisplay({
+                        intensity: '-', time: '近期無地震',
+                        location: '台灣地區', magnitude: '-', depth: '-',
+                        area: '無資料'
                     });
                 }
             } catch (err) {
-                console.error('Earthquake error:', err);
+                console.error('Earthquake fetch error:', err);
+                // Fallback to placeholder
+                updateEarthquakeDisplay({
+                    intensity: '-', time: '資料載入失敗',
+                    location: '--', magnitude: '--', depth: '--',
+                    area: '--'
+                });
             }
         }
 
