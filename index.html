@@ -1998,6 +1998,13 @@
             window.addEventListener('offline', () => {
                 console.log('📴 網路已斷開，使用快取資料');
             });
+
+            // Register Service Worker for offline support
+            if ('serviceWorker' in navigator) {
+                navigator.serviceWorker.register('/sw.js')
+                    .then((reg) => console.log('📦 Service Worker 已註冊'))
+                    .catch((err) => console.log('Service Worker 註冊失敗:', err));
+            }
         }
 
         init();
