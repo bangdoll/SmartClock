@@ -1594,7 +1594,12 @@
 
         function silentRefreshToken() {
             if (googleTokenClient) {
-                googleTokenClient.requestAccessToken({ prompt: '' });
+                try {
+                    googleTokenClient.requestAccessToken({ prompt: '' });
+                } catch (err) {
+                    console.log('[Calendar] Silent refresh failed, keeping cached state');
+                    // Don't reset login state, just keep using cached events
+                }
             }
         }
 
@@ -1611,22 +1616,16 @@
                     // Token invalid, try silent refresh
                     console.log('[Calendar] Token invalid (401), attempting refresh...');
                     silentRefreshToken();
+                    // Keep showing cached events, don't reset login state
                 } else {
-                    // Other error, reset login state
-                    isGoogleSignedIn = false;
-                    isCalendarLoading = false;
-                    localStorage.removeItem('google_access_token');
-                    localStorage.removeItem('google_token_expires_at');
-                    updateCalendarAuthUI();
+                    // Other error - keep using cached state, don't reset
+                    console.log('[Calendar] Validation error, keeping cached state');
                     updateCalendarDisplay();
                 }
             } catch (err) {
                 console.error('Token validation error:', err);
-                isGoogleSignedIn = false;
-                isCalendarLoading = false;
-                localStorage.removeItem('google_access_token');
-                localStorage.removeItem('google_token_expires_at');
-                updateCalendarAuthUI();
+                // Network error - keep using cached state, don't reset login
+                console.log('[Calendar] Network error, keeping cached state');
                 updateCalendarDisplay();
             }
         }
