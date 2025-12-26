@@ -1288,11 +1288,14 @@
 
                             const pubDate = extractTextContent(item, 'pubDate');
 
+                            const link = extractTextContent(item, 'link');
+
                             newsItems.push({
                                 source: source.name,
                                 title: title,
                                 desc: desc.length > 100 ? desc.substring(0, 100) + '...' : desc,
-                                time: formatNewsDate(pubDate)
+                                time: formatNewsDate(pubDate),
+                                link: link
                             });
                         }
                         displayNewsItem(0);
@@ -1302,9 +1305,11 @@
                     console.error(`News error (${source.name}):`, err);
                 }
             }
-            newsItems = [{ source: '新聞', title: '新聞暫時無法載入', desc: '請檢查網路連線', time: formatNewsDate(null) }];
+            newsItems = [{ source: '新聞', title: '新聞暫時無法載入', desc: '請檢查網路連線', time: formatNewsDate(null), link: '' }];
             displayNewsItem(0);
         }
+
+        let currentNewsLink = '';
 
         function displayNewsItem(index) {
             if (newsItems.length === 0) return;
@@ -1313,6 +1318,14 @@
             document.getElementById('newsTitle').textContent = news.title;
             document.getElementById('newsDesc').textContent = news.desc;
             document.getElementById('newsTime').textContent = news.time;
+            currentNewsLink = news.link || '';
+
+            // Update news card click handler
+            const newsCard = document.getElementById('newsCard');
+            if (newsCard) {
+                newsCard.style.cursor = currentNewsLink ? 'pointer' : 'default';
+                newsCard.onclick = currentNewsLink ? () => window.open(currentNewsLink, '_blank') : null;
+            }
         }
 
         function nextNewsItem() {
