@@ -1289,13 +1289,17 @@
                             const pubDate = extractTextContent(item, 'pubDate');
 
                             const link = extractTextContent(item, 'link');
+                            const guid = extractTextContent(item, 'guid');
+                            // Use Smart Flow news page: /news/{first 8 chars of guid}
+                            const shortGuid = guid ? guid.split('-')[0] : '';
+                            const smartFlowLink = shortGuid ? `https://smart-flow.rd.coach/news/${shortGuid}` : link;
 
                             newsItems.push({
                                 source: source.name,
                                 title: title,
                                 desc: desc.length > 100 ? desc.substring(0, 100) + '...' : desc,
                                 time: formatNewsDate(pubDate),
-                                link: link
+                                link: smartFlowLink
                             });
                         }
                         displayNewsItem(0);
