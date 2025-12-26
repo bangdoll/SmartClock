@@ -1143,6 +1143,17 @@
         };
 
         async function fetchWeather() {
+            // Try to load cached data first
+            const cached = localStorage.getItem('cached_weather');
+            const cachedData = cached ? JSON.parse(cached) : null;
+
+            // If offline, use cached data
+            if (!navigator.onLine && cachedData) {
+                console.log('[Weather] Offline - using cached data');
+                updateWeatherDisplay(cachedData);
+                return;
+            }
+
             try {
                 // Open-Meteo free API (no API key required)
                 const url = `https://api.open-meteo.com/v1/forecast?latitude=${CONFIG.LAT}&longitude=${CONFIG.LON}&current=temperature_2m,relative_humidity_2m,apparent_temperature,weather_code,wind_speed_10m,surface_pressure&timezone=Asia%2FTaipei`;
@@ -1156,7 +1167,7 @@
                     // Map WMO weather codes to descriptions and icons
                     const weatherInfo = getWeatherInfo(weatherCode);
 
-                    updateWeatherDisplay({
+                    const weatherData = {
                         temp: Math.round(current.temperature_2m),
                         feels_like: Math.round(current.apparent_temperature),
                         humidity: current.relative_humidity_2m,
@@ -1164,17 +1175,27 @@
                         pressure: Math.round(current.surface_pressure),
                         description: weatherInfo.description,
                         icon: weatherInfo.icon
-                    });
+                    };
+
+                    // Cache the data
+                    localStorage.setItem('cached_weather', JSON.stringify(weatherData));
+
+                    updateWeatherDisplay(weatherData);
                     console.log('[Weather] Fetched from Open-Meteo:', current.temperature_2m + '°C');
                 }
             } catch (err) {
                 console.error('Weather fetch error:', err);
-                // Fallback to placeholder
-                updateWeatherDisplay({
-                    temp: '--', feels_like: '--', humidity: '--',
-                    wind_speed: '--', pressure: '--',
-                    description: '載入失敗', icon: '01d'
-                });
+                // Use cached data if available
+                if (cachedData) {
+                    console.log('[Weather] Error - using cached data');
+                    updateWeatherDisplay(cachedData);
+                } else {
+                    updateWeatherDisplay({
+                        temp: '--', feels_like: '--', humidity: '--',
+                        wind_speed: '--', pressure: '--',
+                        description: '載入失敗', icon: '01d'
+                    });
+                }
             }
         }
 
@@ -1263,6 +1284,18 @@
         }
 
         async function fetchNews() {
+            // Try to load cached data first
+            const cached = localStorage.getItem('cached_news');
+            const cachedNews = cached ? JSON.parse(cached) : null;
+
+            // If offline, use cached data
+            if (!navigator.onLine && cachedNews && cachedNews.length > 0) {
+                console.log('[News] Offline - using cached data');
+                newsItems = cachedNews;
+                displayNewsItem(0);
+                return;
+            }
+
             const sources = CONFIG.NEWS_SOURCES;
             for (let i = 0; i < sources.length; i++) {
                 const source = sources[i];
@@ -1302,6 +1335,8 @@
                                 link: smartFlowLink
                             });
                         }
+                        // Cache the news data
+                        localStorage.setItem('cached_news', JSON.stringify(newsItems));
                         displayNewsItem(0);
                         return;
                     }
@@ -1309,8 +1344,15 @@
                     console.error(`News error (${source.name}):`, err);
                 }
             }
-            newsItems = [{ source: '新聞', title: '新聞暫時無法載入', desc: '請檢查網路連線', time: formatNewsDate(null), link: '' }];
-            displayNewsItem(0);
+            // Use cached data if available
+            if (cachedNews && cachedNews.length > 0) {
+                console.log('[News] Error - using cached data');
+                newsItems = cachedNews;
+                displayNewsItem(0);
+            } else {
+                newsItems = [{ source: '新聞', title: '新聞暫時無法載入', desc: '請檢查網路連線', time: formatNewsDate(null), link: '' }];
+                displayNewsItem(0);
+            }
         }
 
         let currentNewsLink = '';
@@ -1388,6 +1430,17 @@
         }
 
         async function fetchEarthquake() {
+            // Try to load cached data first
+            const cached = localStorage.getItem('cached_earthquake');
+            const cachedData = cached ? JSON.parse(cached) : null;
+
+            // If offline, use cached data
+            if (!navigator.onLine && cachedData) {
+                console.log('[Earthquake] Offline - using cached data');
+                updateEarthquakeDisplay(cachedData);
+                return;
+            }
+
             try {
                 // USGS API: Taiwan region (lat: 21-26, lon: 119-123)
                 const url = 'https://earthquake.usgs.gov/fdsnws/event/1/query?format=geojson&minlatitude=21&maxlatitude=26&minlongitude=119&maxlongitude=123&limit=1&orderby=time';
@@ -1419,31 +1472,43 @@
                     // Parse location (USGS format: "81 km ESE of Yujing, Taiwan")
                     const location = translateUSGSLocation(props.place) || '未知位置';
 
-                    updateEarthquakeDisplay({
+                    const eqData = {
                         intensity: intensity,
                         time: timeStr,
                         location: location,
                         magnitude: magnitude,
                         depth: depth,
                         area: '台灣地區'
-                    });
+                    };
+
+                    // Cache the data
+                    localStorage.setItem('cached_earthquake', JSON.stringify(eqData));
+
+                    updateEarthquakeDisplay(eqData);
                     console.log('[Earthquake] Fetched from USGS:', props.title);
                 } else {
                     // No recent earthquakes
-                    updateEarthquakeDisplay({
+                    const noEqData = {
                         intensity: '-', time: '近期無地震',
                         location: '台灣地區', magnitude: '-', depth: '-',
                         area: '無資料'
-                    });
+                    };
+                    localStorage.setItem('cached_earthquake', JSON.stringify(noEqData));
+                    updateEarthquakeDisplay(noEqData);
                 }
             } catch (err) {
                 console.error('Earthquake fetch error:', err);
-                // Fallback to placeholder
-                updateEarthquakeDisplay({
-                    intensity: '-', time: '資料載入失敗',
-                    location: '--', magnitude: '--', depth: '--',
-                    area: '--'
-                });
+                // Use cached data if available
+                if (cachedData) {
+                    console.log('[Earthquake] Error - using cached data');
+                    updateEarthquakeDisplay(cachedData);
+                } else {
+                    updateEarthquakeDisplay({
+                        intensity: '-', time: '資料載入失敗',
+                        location: '--', magnitude: '--', depth: '--',
+                        area: '--'
+                    });
+                }
             }
         }
 
@@ -1912,6 +1977,20 @@
             });
 
             console.log('🕐 Smart Clock Dashboard 已啟動（含 Google Calendar 整合）');
+
+            // Listen for network status changes
+            window.addEventListener('online', () => {
+                console.log('📶 網路已恢復，更新資料...');
+                fetchWeather();
+                fetchNews();
+                fetchEarthquake();
+                const token = localStorage.getItem('google_access_token');
+                if (token) fetchCalendarEvents(token);
+            });
+
+            window.addEventListener('offline', () => {
+                console.log('📴 網路已斷開，使用快取資料');
+            });
         }
 
         init();
