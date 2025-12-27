@@ -1504,55 +1504,67 @@
             }
 
             try {
-                // Taiwan CWA Earthquake API (小區域有感地震)
-                const url = `https://opendata.cwa.gov.tw/api/v1/rest/datastore/E-A0016-001?Authorization=${CONFIG.CWA_API_KEY}&limit=1`;
-                const res = await fetch(url, { cache: 'no-store' });
-                const data = await res.json();
+                // Fetch both major (E-A0015-001) and minor (E-A0016-001) earthquakes
+                const [majorRes, minorRes] = await Promise.all([
+                    fetch(`https://opendata.cwa.gov.tw/api/v1/rest/datastore/E-A0015-001?Authorization=${CONFIG.CWA_API_KEY}&limit=1`, { cache: 'no-store' }),
+                    fetch(`https://opendata.cwa.gov.tw/api/v1/rest/datastore/E-A0016-001?Authorization=${CONFIG.CWA_API_KEY}&limit=1`, { cache: 'no-store' })
+                ]);
 
-                if (data.success && data.records?.Earthquake?.length > 0) {
-                    const eq = data.records.Earthquake[0];
-                    const info = eq.EarthquakeInfo;
-                    const report = eq.ReportContent;
+                const [majorData, minorData] = await Promise.all([majorRes.json(), minorRes.json()]);
 
-                    // Parse earthquake data
-                    const magnitude = info.EarthquakeMagnitude.MagnitudeValue;
-                    const depth = info.FocalDepth;
-                    const location = info.Epicenter.Location;
-                    const timeStr = info.OriginTime;
+                // Parse both earthquakes
+                let latestEq = null;
+                let latestTime = 0;
 
-                    // Get max intensity from the report
-                    let maxIntensity = 1;
-                    if (eq.Intensity?.ShakingArea) {
-                        eq.Intensity.ShakingArea.forEach(area => {
-                            const level = parseInt(area.AreaIntensity) || 0;
-                            if (level > maxIntensity) maxIntensity = level;
-                        });
+                const parseEq = (data, type) => {
+                    if (data.success && data.records?.Earthquake?.length > 0) {
+                        const eq = data.records.Earthquake[0];
+                        const info = eq.EarthquakeInfo;
+                        const time = new Date(info.OriginTime).getTime();
+
+                        let maxIntensity = 1;
+                        if (eq.Intensity?.ShakingArea) {
+                            eq.Intensity.ShakingArea.forEach(area => {
+                                const level = parseInt(area.AreaIntensity) || 0;
+                                if (level > maxIntensity) maxIntensity = level;
+                            });
+                        }
+
+                        return {
+                            time,
+                            data: {
+                                intensity: maxIntensity,
+                                time: new Date(info.OriginTime).toLocaleString('zh-TW', {
+                                    month: '2-digit', day: '2-digit',
+                                    hour: '2-digit', minute: '2-digit'
+                                }),
+                                location: info.Epicenter.Location,
+                                magnitude: info.EarthquakeMagnitude.MagnitudeValue,
+                                depth: info.FocalDepth,
+                                area: eq.ReportContent || '台灣地區'
+                            }
+                        };
                     }
+                    return null;
+                };
 
-                    // Format time
-                    const eqTime = new Date(timeStr);
-                    const formattedTime = eqTime.toLocaleString('zh-TW', {
-                        month: '2-digit', day: '2-digit',
-                        hour: '2-digit', minute: '2-digit'
-                    });
+                const major = parseEq(majorData, 'major');
+                const minor = parseEq(minorData, 'minor');
 
-                    const eqData = {
-                        intensity: maxIntensity,
-                        time: formattedTime,
-                        location: location,
-                        magnitude: magnitude,
-                        depth: depth,
-                        area: report || '台灣地區'
-                    };
+                // Choose the most recent one
+                if (major && (!minor || major.time > minor.time)) {
+                    latestEq = major.data;
+                    console.log('[Earthquake] Fetched from CWA (大區域):', latestEq.location, 'M' + latestEq.magnitude);
+                } else if (minor) {
+                    latestEq = minor.data;
+                    console.log('[Earthquake] Fetched from CWA (小區域):', latestEq.location, 'M' + latestEq.magnitude);
+                }
 
-                    // Cache the data
-                    localStorage.setItem('cached_earthquake', JSON.stringify(eqData));
+                if (latestEq) {
+                    localStorage.setItem('cached_earthquake', JSON.stringify(latestEq));
                     setLastUpdateTime('earthquake');
-
-                    updateEarthquakeDisplay(eqData);
-                    console.log('[Earthquake] Fetched from CWA:', location, 'M' + magnitude);
+                    updateEarthquakeDisplay(latestEq);
                 } else {
-                    // No recent earthquakes
                     const noEqData = {
                         intensity: '-', time: '近期無地震',
                         location: '台灣地區', magnitude: '-', depth: '-',
