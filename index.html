@@ -1051,7 +1051,7 @@
             WEATHER_API_KEY: '',
             LAT: 25.0330,
             LON: 121.5654,
-            CWA_API_KEY: '',
+            CWA_API_KEY: 'CWA-795FD64A-1687-430B-ACEB-2BA6520BC570',
             CARD_INTERVAL: 15000,
             CORS_PROXY: '', // Not needed for same-origin or CORS-enabled feeds
             NEWS_SOURCES: [
@@ -1504,43 +1504,45 @@
             }
 
             try {
-                // USGS API: Taiwan region (lat: 21-26, lon: 119-123)
-                const url = 'https://earthquake.usgs.gov/fdsnws/event/1/query?format=geojson&minlatitude=21&maxlatitude=26&minlongitude=119&maxlongitude=123&limit=1&orderby=time';
-                const res = await fetch(url);
+                // Taiwan CWA Earthquake API (小區域有感地震)
+                const url = `https://opendata.cwa.gov.tw/api/v1/rest/datastore/E-A0016-001?Authorization=${CONFIG.CWA_API_KEY}&limit=1`;
+                const res = await fetch(url, { cache: 'no-store' });
                 const data = await res.json();
 
-                if (data.features && data.features.length > 0) {
-                    const eq = data.features[0];
-                    const props = eq.properties;
-                    const coords = eq.geometry.coordinates;
-                    const depth = Math.round(coords[2]);
-                    const magnitude = props.mag;
+                if (data.success && data.records?.Earthquake?.length > 0) {
+                    const eq = data.records.Earthquake[0];
+                    const info = eq.EarthquakeInfo;
+                    const report = eq.ReportContent;
 
-                    // Convert timestamp to local time string
-                    const eqTime = new Date(props.time);
-                    const timeStr = eqTime.toLocaleString('zh-TW', {
-                        year: 'numeric', month: '2-digit', day: '2-digit',
+                    // Parse earthquake data
+                    const magnitude = info.EarthquakeMagnitude.MagnitudeValue;
+                    const depth = info.FocalDepth;
+                    const location = info.Epicenter.Location;
+                    const timeStr = info.OriginTime;
+
+                    // Get max intensity from the report
+                    let maxIntensity = 1;
+                    if (eq.Intensity?.ShakingArea) {
+                        eq.Intensity.ShakingArea.forEach(area => {
+                            const level = parseInt(area.AreaIntensity) || 0;
+                            if (level > maxIntensity) maxIntensity = level;
+                        });
+                    }
+
+                    // Format time
+                    const eqTime = new Date(timeStr);
+                    const formattedTime = eqTime.toLocaleString('zh-TW', {
+                        month: '2-digit', day: '2-digit',
                         hour: '2-digit', minute: '2-digit'
                     });
 
-                    // Estimate intensity from magnitude (rough approximation)
-                    let intensity = 1;
-                    if (magnitude >= 6.5) intensity = 6;
-                    else if (magnitude >= 6.0) intensity = 5;
-                    else if (magnitude >= 5.5) intensity = 4;
-                    else if (magnitude >= 5.0) intensity = 3;
-                    else if (magnitude >= 4.0) intensity = 2;
-
-                    // Parse location (USGS format: "81 km ESE of Yujing, Taiwan")
-                    const location = translateUSGSLocation(props.place) || '未知位置';
-
                     const eqData = {
-                        intensity: intensity,
-                        time: timeStr,
+                        intensity: maxIntensity,
+                        time: formattedTime,
                         location: location,
                         magnitude: magnitude,
                         depth: depth,
-                        area: '台灣地區'
+                        area: report || '台灣地區'
                     };
 
                     // Cache the data
@@ -1548,7 +1550,7 @@
                     setLastUpdateTime('earthquake');
 
                     updateEarthquakeDisplay(eqData);
-                    console.log('[Earthquake] Fetched from USGS:', props.title);
+                    console.log('[Earthquake] Fetched from CWA:', location, 'M' + magnitude);
                 } else {
                     // No recent earthquakes
                     const noEqData = {
