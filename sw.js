@@ -1,4 +1,4 @@
-const CACHE_NAME = 'smart-clock-v1';
+const CACHE_NAME = 'smart-clock-v2';
 const urlsToCache = [
     '/',
     '/index.html',
