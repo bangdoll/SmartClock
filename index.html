@@ -1661,11 +1661,11 @@
                 if (Date.now() < expiresAt) {
                     // Token still valid
                     console.log('[Calendar] Using saved token, expires:', new Date(expiresAt).toLocaleString());
-                    validateAndFetchEvents(savedToken);
+                    validateAndFetchEvents(savedToken, true); // true = isBackground (avoid popup on load)
                 } else {
                     // Token expired, try silent refresh
                     console.log('[Calendar] Token expired, attempting silent refresh...');
-                    silentRefreshToken();
+                    silentRefreshToken(true); // true = isBackground (avoid popup on load)
                 }
             }
         }
