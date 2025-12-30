@@ -1670,18 +1670,23 @@
             }
         }
 
-        function silentRefreshToken() {
+        // isBackground parameter to prevent popup triggers during background updates
+        function silentRefreshToken(isBackground = false) {
+            if (isBackground) {
+                console.log('[Calendar] Background refresh needed but skipped to prevent popup');
+                return;
+            }
             if (googleTokenClient) {
                 try {
+                    console.log('[Calendar] Attempting silent refresh...');
                     googleTokenClient.requestAccessToken({ prompt: '' });
                 } catch (err) {
-                    console.log('[Calendar] Silent refresh failed, keeping cached state');
-                    // Don't reset login state, just keep using cached events
+                    console.log('[Calendar] Silent refresh failed:', err);
                 }
             }
         }
 
-        async function validateAndFetchEvents(token) {
+        async function validateAndFetchEvents(token, isBackground = false) {
             try {
                 const res = await fetch('https://www.googleapis.com/calendar/v3/users/me/calendarList', {
                     headers: { 'Authorization': `Bearer ${token}` }
@@ -1689,21 +1694,22 @@
                 if (res.ok) {
                     isGoogleSignedIn = true;
                     updateCalendarAuthUI();
-                    fetchCalendarEvents(token);
+                    fetchCalendarEvents(token, isBackground);
                 } else if (res.status === 401) {
-                    // Token invalid, try silent refresh
-                    console.log('[Calendar] Token invalid (401), attempting refresh...');
-                    silentRefreshToken();
-                    // Keep showing cached events, don't reset login state
+                    // Token invalid
+                    console.log('[Calendar] Token invalid (401)');
+                    if (!isBackground) {
+                        console.log('[Calendar] Attempting refresh (user initiated)...');
+                        silentRefreshToken(false);
+                    } else {
+                        console.log('[Calendar] Background validation failed, skipping refresh to avoid popup');
+                    }
                 } else {
-                    // Other error - keep using cached state, don't reset
                     console.log('[Calendar] Validation error, keeping cached state');
                     updateCalendarDisplay();
                 }
             } catch (err) {
                 console.error('Token validation error:', err);
-                // Network error - keep using cached state, don't reset login
-                console.log('[Calendar] Network error, keeping cached state');
                 updateCalendarDisplay();
             }
         }
@@ -1741,7 +1747,7 @@
 
         let calendarError = null; // Track API errors
 
-        async function fetchCalendarEvents(token) {
+        async function fetchCalendarEvents(token, isBackground = false) {
             try {
                 const now = new Date();
                 const endOfDay = new Date(now);
@@ -1770,9 +1776,14 @@
                     setLastUpdateTime('calendar');
                     console.log('[Calendar] Fetched and cached', calendarEvents.length, 'events');
                 } else if (res.status === 401) {
-                    // Token expired or invalid, try silent refresh
-                    console.log('[Calendar] Token invalid (401), attempting silent refresh...');
-                    silentRefreshToken();
+                    // Token expired or invalid
+                    console.log('[Calendar] Token invalid, need refresh (Background:', isBackground, ')');
+                    if (!isBackground) {
+                        console.log('[Calendar] Attempting silent refresh...');
+                        silentRefreshToken(false);
+                    } else {
+                        console.log('[Calendar] Background refresh skipped to avoid popup');
+                    }
                     return; // Don't update display yet, wait for refresh
                 } else {
                     // Handle other API errors (like 403 when API not enabled)
@@ -2026,7 +2037,7 @@
             setInterval(fetchEarthquake, 300000);
             setInterval(() => {
                 const token = localStorage.getItem('google_access_token');
-                if (token) fetchCalendarEvents(token);
+                if (token) fetchCalendarEvents(token, true); // true = isBackground
             }, 300000); // Refresh calendar every 5 mins
 
             // 暫停輪播期間，直接顯示 Calendar 卡片以便調試
@@ -2063,7 +2074,7 @@
                 fetchNews();
                 fetchEarthquake();
                 const token = localStorage.getItem('google_access_token');
-                if (token) fetchCalendarEvents(token);
+                if (token) fetchCalendarEvents(token, true); // true = isBackground
             });
 
             window.addEventListener('offline', () => {
