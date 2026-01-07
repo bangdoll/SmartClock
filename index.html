@@ -1419,12 +1419,171 @@
 
         let currentNewsLink = '';
 
+        // TTS & MediaSession Variables
+        let isSpeaking = false;
+        let synthesis = window.speechSynthesis;
+        let currentUtterance = null;
+        let currentSpeakingIndex = -1;
+
+        function speakNews(index) {
+            if (!newsItems || newsItems.length === 0) return;
+            // Ensure index is valid
+            index = index % newsItems.length;
+            if (index < 0) index += newsItems.length;
+
+            const item = newsItems[index];
+            // 朗讀標題與內容
+            const textToSpeak = `${item.title}。 ${item.desc}`;
+
+            // Cancel current speech
+            stopSpeaking();
+
+            // Set speaking state
+            isSpeaking = true;
+            currentSpeakingIndex = index;
+            updatePlayButtonUI(true);
+
+            // Pause carousel auto-rotation while speaking
+            if (carouselIntervalId) {
+                clearInterval(carouselIntervalId);
+                carouselIntervalId = null;
+            }
+
+            // Create utterance
+            currentUtterance = new SpeechSynthesisUtterance(textToSpeak);
+            currentUtterance.lang = 'zh-TW'; // Force Traditional Chinese voice
+            currentUtterance.rate = 1.0;
+            currentUtterance.pitch = 1.0;
+
+            currentUtterance.onend = () => {
+                // Auto play next news
+                if (isSpeaking) {
+                    const nextIndex = (currentSpeakingIndex + 1) % newsItems.length;
+                    // Slight delay before next track
+                    setTimeout(() => {
+                        displayNewsItem(nextIndex);
+                        speakNews(nextIndex);
+                    }, 1000);
+                }
+            };
+
+            currentUtterance.onerror = (e) => {
+                console.error('[TTS] Error:', e);
+                stopSpeaking();
+            };
+
+            synthesis.speak(currentUtterance);
+
+            // Update MediaSession (CarPlay)
+            if ('mediaSession' in navigator) {
+                navigator.mediaSession.metadata = new MediaMetadata({
+                    title: item.title,
+                    artist: '智流新聞 Smart Clock',
+                    album: item.time,
+                    artwork: [
+                        { src: 'https://smart-flow.rd.coach/icon.png', sizes: '96x96', type: 'image/png' },
+                        { src: 'https://smart-flow.rd.coach/icon.png', sizes: '128x128', type: 'image/png' },
+                        { src: 'https://smart-flow.rd.coach/icon.png', sizes: '192x192', type: 'image/png' },
+                        { src: 'https://smart-flow.rd.coach/icon.png', sizes: '512x512', type: 'image/png' }
+                    ]
+                });
+
+                navigator.mediaSession.playbackState = 'playing';
+
+                navigator.mediaSession.setActionHandler('play', () => {
+                    synthesis.resume();
+                    if (!synthesis.speaking && currentSpeakingIndex >= 0) speakNews(currentSpeakingIndex);
+                    navigator.mediaSession.playbackState = 'playing';
+                    updatePlayButtonUI(true);
+                });
+                navigator.mediaSession.setActionHandler('pause', () => {
+                    synthesis.pause();
+                    navigator.mediaSession.playbackState = 'paused';
+                    updatePlayButtonUI(false);
+                });
+                navigator.mediaSession.setActionHandler('previoustrack', () => {
+                    const prevIndex = (currentSpeakingIndex - 1 + newsItems.length) % newsItems.length;
+                    displayNewsItem(prevIndex);
+                    speakNews(prevIndex);
+                });
+                navigator.mediaSession.setActionHandler('nexttrack', () => {
+                    const nextIndex = (currentSpeakingIndex + 1) % newsItems.length;
+                    displayNewsItem(nextIndex);
+                    speakNews(nextIndex);
+                });
+                navigator.mediaSession.setActionHandler('stop', () => {
+                    stopSpeaking();
+                });
+            }
+        }
+
+        function stopSpeaking() {
+            isSpeaking = false;
+            if (synthesis) {
+                synthesis.cancel();
+            }
+            updatePlayButtonUI(false);
+            if ('mediaSession' in navigator) {
+                navigator.mediaSession.playbackState = 'none';
+            }
+
+            // Resume carousel
+            if (!carouselIntervalId && !CAROUSEL_PAUSED) {
+                carouselIntervalId = setInterval(nextCarouselStep, CONFIG.CARD_INTERVAL);
+            }
+        }
+
+        function updatePlayButtonUI(playing) {
+            const btn = document.getElementById('newsPlayBtn');
+            if (btn) {
+                btn.textContent = playing ? '⏹️ 停止朗讀' : '🔊 朗讀新聞';
+                btn.classList.toggle('playing', playing);
+            }
+        }
+
+        function toggleSpeech() {
+            if (isSpeaking) {
+                stopSpeaking();
+            } else {
+                speakNews(currentNewsDisplayIndex);
+            }
+        }
+
         function displayNewsItem(index) {
             if (newsItems.length === 0) return;
             const news = newsItems[index % newsItems.length];
+            currentNewsDisplayIndex = index % newsItems.length; // Sync index
+
             document.getElementById('newsSource').textContent = news.source;
             document.getElementById('newsTitle').textContent = news.title;
-            document.getElementById('newsDesc').textContent = news.desc;
+
+            // Use innerHTML to add button
+            const descContainer = document.getElementById('newsDesc');
+            descContainer.innerHTML = ''; // Clear previous content
+
+            const textSpan = document.createElement('span');
+            textSpan.textContent = news.desc;
+            descContainer.appendChild(textSpan);
+
+            // Add TTS Button
+            const btnDiv = document.createElement('div');
+            btnDiv.style.marginTop = '12px';
+            btnDiv.innerHTML = `<button id="newsPlayBtn" class="auth-btn" style="padding: 6px 16px; font-size: 0.95rem; border-radius: 20px;">🔊 朗讀新聞</button>`;
+
+            // Only add button if speech synthesis is supported
+            if ('speechSynthesis' in window) {
+                descContainer.appendChild(btnDiv);
+
+                // Re-attach play state if needed
+                setTimeout(() => updatePlayButtonUI(isSpeaking), 0);
+
+                const btn = btnDiv.querySelector('button');
+                btn.onclick = (e) => {
+                    e.stopPropagation(); // Prevent card click
+                    toggleSpeech();
+                };
+            }
+
             document.getElementById('newsTime').textContent = news.time;
             currentNewsLink = news.link || '';
 
@@ -1432,7 +1591,11 @@
             const newsCard = document.getElementById('newsCard');
             if (newsCard) {
                 newsCard.style.cursor = currentNewsLink ? 'pointer' : 'default';
-                newsCard.onclick = currentNewsLink ? () => window.open(currentNewsLink, '_blank') : null;
+                newsCard.onclick = (e) => {
+                    // Ignore clicks on buttons
+                    if (e.target.tagName === 'BUTTON') return;
+                    if (currentNewsLink) window.open(currentNewsLink, '_blank');
+                };
             }
         }
 
