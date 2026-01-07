@@ -2186,11 +2186,77 @@
             }
         });
 
+        // ===== IN-CAR OPTIMIZATIONS (WAKE LOCK & FULLSCREEN) =====
+        let wakeLock = null;
+
+        async function requestWakeLock() {
+            try {
+                if ('wakeLock' in navigator) {
+                    wakeLock = await navigator.wakeLock.request('screen');
+                    console.log('[WakeLock] Screen Wake Lock active');
+
+                    wakeLock.addEventListener('release', () => {
+                        console.log('[WakeLock] Screen Wake Lock released');
+                    });
+                }
+            } catch (err) {
+                console.error(`[WakeLock] Error: ${err.name}, ${err.message}`);
+            }
+        }
+
+        // Re-request wake lock when visibility changes (e.g. switch back from other tab)
+        document.addEventListener('visibilitychange', async () => {
+            if (wakeLock !== null && document.visibilityState === 'visible') {
+                requestWakeLock();
+            }
+        });
+
+        // Double-tap to toggle fullscreen
+        let lastTap = 0;
+        document.addEventListener('touchend', (e) => {
+            // Ignore if double tap is on a button or link
+            if (e.target.tagName === 'BUTTON' || e.target.tagName === 'A') return;
+
+            const currentTime = new Date().getTime();
+            const tapLength = currentTime - lastTap;
+            if (tapLength < 500 && tapLength > 0) {
+                toggleFullscreen();
+                e.preventDefault();
+            }
+            lastTap = currentTime;
+        });
+
+        // Also support double click for desktop testing
+        document.addEventListener('dblclick', (e) => {
+            if (e.target.tagName === 'BUTTON' || e.target.tagName === 'A') return;
+            toggleFullscreen();
+        });
+
+        function toggleFullscreen() {
+            if (!document.fullscreenElement) {
+                document.documentElement.requestFullscreen().catch(err => {
+                    console.log(`[Fullscreen] Error enabling fullscreen: ${err.message}`);
+                });
+            } else {
+                if (document.exitFullscreen) {
+                    document.exitFullscreen();
+                }
+            }
+        }
+
         // ===== INIT =====
         function init() {
             initTheme();
             initClock();
-            initGoogleAuth(); // Initialize Google Calendar OAuth
+            initGoogleAuth();
+
+            // Request Wake Lock on init (might need user interaction first)
+            requestWakeLock();
+            // Also try on first interaction just in case
+            window.addEventListener('click', () => {
+                if (!wakeLock) requestWakeLock();
+            }, { once: true });
+
             setInterval(updateClock, 1000);
             fetchWeather();
             fetchNews();
