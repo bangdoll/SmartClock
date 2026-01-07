@@ -1476,15 +1476,20 @@
 
             // Update MediaSession (CarPlay)
             if ('mediaSession' in navigator) {
+                // Format: "MM/DD HH:mm Title"
+                // e.g., "01/08 09:30 AI 趨勢..."
+                const timeStr = item.time.replace(/(\d{4})\//, ''); // Remove year if present to save space? item.time is from formatNewsDate which might include year depending on locale. 
+                // item.time is localized string. Let's trust it or re-format.
+                // formatNewsDate returns "M/D HH:mm" usually for "zh-TW" with numeric options.
+
+                const displayTitle = `${item.time} ${item.title}`;
+
                 navigator.mediaSession.metadata = new MediaMetadata({
-                    title: item.title,
-                    artist: '智流新聞 Smart Clock',
-                    album: item.time,
+                    title: displayTitle,
+                    artist: 'AI 智流廣播',
+                    album: '每日科技新知',
                     artwork: [
-                        { src: 'https://smart-flow.rd.coach/icon.png', sizes: '96x96', type: 'image/png' },
-                        { src: 'https://smart-flow.rd.coach/icon.png', sizes: '128x128', type: 'image/png' },
-                        { src: 'https://smart-flow.rd.coach/icon.png', sizes: '192x192', type: 'image/png' },
-                        { src: 'https://smart-flow.rd.coach/icon.png', sizes: '512x512', type: 'image/png' }
+                        { src: 'assets/station_cover.png', sizes: '512x512', type: 'image/png' }
                     ]
                 });
 
