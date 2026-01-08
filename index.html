@@ -399,31 +399,13 @@
 
         /* Theme: NIXIE TUBE (Retro Glow) */
         .clock-theme-nixie .digit-card {
-            background: rgba(10, 10, 15, 0.85);
-            /* Dark tube background */
-            border-radius: 4px;
-            border: 1px solid rgba(100, 100, 100, 0.3);
-            box-shadow:
-                inset 0 0 20px rgba(0, 0, 0, 0.9),
-                /* Internal depth */
-                0 0 10px rgba(0, 0, 0, 0.5);
-            /* External shadow */
-            position: relative;
-            overflow: hidden;
+            background: transparent;
+            border: none;
+            box-shadow: none;
         }
 
-        /* Glass reflection effect */
         .clock-theme-nixie .digit-card::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 10%;
-            width: 80%;
-            height: 40%;
-            background: linear-gradient(180deg, rgba(255, 255, 255, 0.1) 0%, transparent 100%);
-            border-radius: 4px 4px 50% 50%;
-            z-index: 2;
-            pointer-events: none;
+            display: none;
         }
 
         .clock-theme-nixie .digit-card::after {
