@@ -233,6 +233,17 @@
             z-index: 10;
         }
 
+        #clock-hitbox {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 20;
+            /* Higher than clock contents */
+            cursor: pointer;
+        }
+
         .flip-clock {
             display: flex;
             align-items: center;
@@ -1064,6 +1075,9 @@
 
 
     <div class="clock-panel">
+        <!-- Transparent Interaction Layer -->
+        <div id="clock-hitbox" title="點擊切換風格"></div>
+
         <div class="clock-tooltip">點擊切換風格</div>
         <div class="flip-clock" title="點擊切換時鐘風格">
             <div class="flip-unit-container" id="hours">
@@ -2647,18 +2661,30 @@
             applyClockTheme(currentClockTheme);
 
             // Add verification for manual testing
-            const clockContainer = document.querySelector('.flip-clock');
-            if (clockContainer) {
-                // Simplified interaction handler - just use onclick
-                // This avoids any complex event listener issues
-                clockContainer.onclick = function (e) {
-                    console.log('[Clock] Click detected');
+            // Use Hitbox primarily, fallback to container
+            const clockHitbox = document.getElementById('clock-hitbox');
+            if (clockHitbox) {
+                clockHitbox.onclick = function (e) {
+                    console.log('[Clock] Hitbox Click detected');
+                    e.stopPropagation();
+
                     toggleClockTheme();
 
                     // Visual feedback
-                    this.style.transform = 'scale(0.95)';
-                    setTimeout(() => this.style.transform = 'scale(1)', 100);
+                    const clockEl = document.querySelector('.flip-clock');
+                    if (clockEl) {
+                        clockEl.style.transform = 'scale(0.95)';
+                        setTimeout(() => clockEl.style.transform = 'scale(1)', 100);
+                    }
                 };
+            } else {
+                // Fallback if hitbox missing
+                const clockContainer = document.querySelector('.flip-clock');
+                if (clockContainer) {
+                    clockContainer.onclick = function (e) {
+                        toggleClockTheme();
+                    };
+                }
             }
 
             init();
