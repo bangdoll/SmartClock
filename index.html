@@ -24,7 +24,7 @@
     <link rel="icon" type="image/png" sizes="16x16" href="favicon-16x16.png">
     <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png">
     <link
-        href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Orbitron:wght@400;500;900&family=Share+Tech+Mono&display=swap"
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@200;400;500;600;700&family=Orbitron:wght@400;500;900&family=Share+Tech+Mono&family=Nixie+One&display=swap"
         rel="stylesheet">
     <style>
         * {
@@ -397,36 +397,63 @@
             letter-spacing: -0.05em;
         }
 
-        /* Theme: INDUSTRIAL (Bold) - Swiss Style */
-        .clock-theme-industrial .digit-card {
-            background: #222;
+        /* Theme: NIXIE TUBE (Retro Glow) */
+        .clock-theme-nixie .digit-card {
+            background: rgba(10, 10, 15, 0.85);
+            /* Dark tube background */
             border-radius: 4px;
-            /* Sharper */
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
-            border: 1px solid rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(100, 100, 100, 0.3);
+            box-shadow:
+                inset 0 0 20px rgba(0, 0, 0, 0.9),
+                /* Internal depth */
+                0 0 10px rgba(0, 0, 0, 0.5);
+            /* External shadow */
+            position: relative;
+            overflow: hidden;
         }
 
-        [data-theme="light"] .clock-theme-industrial .digit-card {
-            background: #eee;
-            border: 1px solid #ccc;
+        /* Glass reflection effect */
+        .clock-theme-nixie .digit-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 10%;
+            width: 80%;
+            height: 40%;
+            background: linear-gradient(180deg, rgba(255, 255, 255, 0.1) 0%, transparent 100%);
+            border-radius: 4px 4px 50% 50%;
+            z-index: 2;
+            pointer-events: none;
         }
 
-        .clock-theme-industrial .digit-card::after {
+        .clock-theme-nixie .digit-card::after {
             display: none;
         }
 
-        .clock-theme-industrial .digit {
-            font-family: 'Inter', sans-serif;
-            font-weight: 900;
-            /* Ultra Bold */
-            font-size: 9vw;
-            color: #fff;
-            letter-spacing: -2px;
+        .clock-theme-nixie .digit {
+            font-family: 'Nixie One', cursive;
+            /* Wire-like font */
+            font-weight: 400;
+            font-size: 8vw;
+            color: #ffe0c0;
+            /* Hot filament core */
+            z-index: 10;
+
+            /* Complex Nixie Glow */
+            text-shadow:
+                0 0 10px #ff6b00,
+                /* Orange inner aura */
+                0 0 20px #ff3300,
+                /* Reddish outer aura */
+                0 0 40px #ff0000,
+                /* Distant bloom */
+                0 0 60px rgba(255, 0, 0, 0.4);
+            /* Atmosphere */
         }
 
-        [data-theme="light"] .clock-theme-industrial .digit {
-            color: #222;
-        }
+        .clock-theme-nixie .separator {
+            color: #ff6b00;
+            text-shadow: 0 0 10px #ff3300;
         }
 
         /* Roll animation (Default Flip) */
@@ -2710,7 +2737,7 @@
         }
 
         // ===== CLOCK THEME LOGIC =====
-        const CLOCK_THEMES = ['flip', 'minimal', 'industrial'];
+        const CLOCK_THEMES = ['flip', 'minimal', 'nixie'];
         let currentClockTheme = localStorage.getItem('clock_theme') || 'flip';
 
         function applyClockTheme(theme) {
