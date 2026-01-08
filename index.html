@@ -215,6 +215,8 @@
             justify-content: center;
             align-items: center;
             gap: 1.5rem;
+            position: relative;
+            z-index: 10;
         }
 
         .flip-clock {
@@ -1045,8 +1047,7 @@
     <!-- Dynamic Background Layer -->
     <div id="bg-layer" class="bg-clear"></div>
 
-    <!-- Dynamic Background Layer -->
-    <div id="bg-layer" class="bg-clear"></div>
+
 
     <div class="clock-panel">
         <div class="clock-tooltip">點擊切換風格</div>
@@ -2634,12 +2635,26 @@
             // Add verification for manual testing
             const clockContainer = document.querySelector('.flip-clock');
             if (clockContainer) {
-                clockContainer.addEventListener('click', () => {
+                const handleClockInteraction = (e) => {
+                    // Start toggling
                     toggleClockTheme();
+
                     // Visual feedback
                     clockContainer.style.transform = 'scale(0.95)';
                     setTimeout(() => clockContainer.style.transform = 'scale(1)', 100);
-                });
+
+                    // Prevent default to avoid double-firing (ghost clicks)
+                    // But we must allow scrolling if the user is dragging? 
+                    // Actually, let's just use click. The main issue was likely z-index.
+                    // But user says "doesn't work at all". `touchend` is safer on some mobile webviews.
+                    e.preventDefault();
+                };
+
+                // Use click for desktop and standard mobile behavior
+                clockContainer.addEventListener('click', handleClockInteraction);
+                // Use touchend for faster response on touch devices, but ensure we don't double fire
+                // But wait, if we preventDefault on touchend, click won't fire. That's good.
+                clockContainer.addEventListener('touchend', handleClockInteraction);
             }
 
             init();
