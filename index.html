@@ -54,11 +54,13 @@
             --text-secondary: rgba(0, 0, 0, 0.6);
         }
 
-        /* Theme Toggle Button */
+        /* Theme Toggle Button (Top-Left) */
         .theme-toggle {
             position: fixed;
-            top: 1.5rem;
-            right: 1.5rem;
+            top: 2rem;
+            left: 2rem;
+            /* Move to Left */
+            right: auto;
             width: 48px;
             height: 48px;
             border-radius: 50%;
@@ -83,12 +85,14 @@
             transform: scale(0.95);
         }
 
-        /* Style Toggle Button (Secondary) */
+        /* Style Toggle Button (Secondary, Next to Theme) */
         .style-toggle {
             position: fixed;
-            top: 1.5rem;
-            right: 5.5rem;
-            /* Left of theme toggle */
+            top: 2rem;
+            left: 6rem;
+            /* Next to theme toggle (2rem + 48px + gap) */
+            right: auto;
+
             width: 48px;
             height: 48px;
             border-radius: 50%;
@@ -1076,26 +1080,31 @@
                 width: 100%;
             }
 
-            /* Move theme toggle to top left corner */
+            /* Move theme toggle to top left corner (adjusted) */
             .theme-toggle {
-                top: 0.5rem;
+                top: 1rem;
+                left: 1rem;
                 right: auto;
-                left: 10%;
-                width: 28px;
-                height: 28px;
-                font-size: 0.9rem;
-                opacity: 0.6;
+                width: 36px;
+                height: 36px;
+                font-size: 1rem;
+                opacity: 0.8;
+                background: rgba(255, 255, 255, 0.1);
+                /* Ensure visibility */
+                backdrop-filter: blur(5px);
             }
 
             .style-toggle {
-                top: 0.5rem;
-                right: auto;
-                left: 20%;
+                top: 1rem;
+                left: 4rem;
                 /* Next to theme toggle */
-                width: 28px;
-                height: 28px;
-                font-size: 0.9rem;
-                opacity: 0.6;
+                right: auto;
+                width: 36px;
+                height: 36px;
+                font-size: 1rem;
+                opacity: 0.8;
+                background: rgba(255, 255, 255, 0.1);
+                backdrop-filter: blur(5px);
             }
 
             .theme-toggle:hover {
