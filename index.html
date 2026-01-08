@@ -398,11 +398,13 @@
             letter-spacing: -0.05em;
         }
 
-        /* Theme: NIXIE TUBE (Retro Glow) */
+        /* Theme: NIXIE TUBE (Retro Glow) - Enhanced Visibility */
         .clock-theme-nixie .digit-card {
-            background: transparent;
+            background: rgba(0, 0, 0, 0.4);
+            /* Subtle dark backdrop for contrast */
             border: none;
             box-shadow: none;
+            border-radius: 6px;
         }
 
         .clock-theme-nixie .digit-card::before {
@@ -414,29 +416,24 @@
         }
 
         .clock-theme-nixie .digit {
-            font-family: 'Nixie One', cursive;
-            /* Wire-like font */
-            font-weight: 400;
+            font-family: 'Inter', sans-serif;
+            /* More readable font */
+            font-weight: 300;
             font-size: 8vw;
-            color: #ffe0c0;
-            /* Hot filament core */
+            color: #ff8844;
+            /* Solid warm orange core */
             z-index: 10;
 
-            /* Complex Nixie Glow */
+            /* Sharper, more focused glow */
             text-shadow:
-                0 0 10px #ff6b00,
-                /* Orange inner aura */
-                0 0 20px #ff3300,
-                /* Reddish outer aura */
-                0 0 40px #ff0000,
-                /* Distant bloom */
-                0 0 60px rgba(255, 0, 0, 0.4);
-            /* Atmosphere */
+                0 0 5px #ff6600,
+                0 0 15px rgba(255, 100, 0, 0.8),
+                0 0 30px rgba(255, 50, 0, 0.5);
         }
 
         .clock-theme-nixie .separator {
-            color: #ff6b00;
-            text-shadow: 0 0 10px #ff3300;
+            color: #ff6600;
+            text-shadow: 0 0 8px #ff4400;
         }
 
         /* Roll animation (Default Flip) */
