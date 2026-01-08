@@ -83,6 +83,36 @@
             transform: scale(0.95);
         }
 
+        /* Style Toggle Button (Secondary) */
+        .style-toggle {
+            position: fixed;
+            top: 1.5rem;
+            right: 5.5rem;
+            /* Left of theme toggle */
+            width: 48px;
+            height: 48px;
+            border-radius: 50%;
+            background: var(--bg-card);
+            border: none;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            transition: all 0.3s ease;
+            z-index: 100;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        }
+
+        .style-toggle:hover {
+            transform: scale(1.1);
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.2);
+        }
+
+        .style-toggle:active {
+            transform: scale(0.95);
+        }
+
         /* ===== DYNAMIC BACKGROUND LAYERS ===== */
         #bg-layer {
             position: fixed;
@@ -1057,6 +1087,17 @@
                 opacity: 0.6;
             }
 
+            .style-toggle {
+                top: 0.5rem;
+                right: auto;
+                left: 20%;
+                /* Next to theme toggle */
+                width: 28px;
+                height: 28px;
+                font-size: 0.9rem;
+                opacity: 0.6;
+            }
+
             .theme-toggle:hover {
                 opacity: 1;
             }
@@ -1066,7 +1107,9 @@
 
 <body>
     <!-- Theme Toggle Button -->
-    <button class="theme-toggle" id="themeToggle" title="切換主題">🌙</button>
+    <button class="theme-toggle" id="themeToggle" title="切換深色/淺色模式">🌙</button>
+    <!-- Style Toggle Button (New!) -->
+    <button class="style-toggle" id="styleToggle" title="切換時鐘風格">🎨</button>
 
     <!-- LEFT PANEL: CLOCK -->
     <!-- Dynamic Background Layer -->
@@ -2662,6 +2705,21 @@
 
             // Add verification for manual testing
             // Use Hitbox primarily, fallback to container
+            // ... (keep hitbox logic as backup)
+
+            // Explicit Style Toggle Button Logic
+            const styleBtn = document.getElementById('styleToggle');
+            if (styleBtn) {
+                styleBtn.addEventListener('click', (e) => {
+                    e.stopPropagation(); // critical
+                    toggleClockTheme();
+
+                    // Visual feedback
+                    styleBtn.style.transform = 'scale(0.9)';
+                    setTimeout(() => styleBtn.style.transform = 'scale(1)', 100);
+                });
+            }
+
             const clockHitbox = document.getElementById('clock-hitbox');
             if (clockHitbox) {
                 clockHitbox.onclick = function (e) {
