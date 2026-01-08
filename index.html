@@ -221,6 +221,30 @@
             display: flex;
             align-items: center;
             gap: 0.5rem;
+            cursor: pointer;
+            /* Show it is clickable */
+            transition: transform 0.1s ease;
+        }
+
+        .flip-clock:active {
+            transform: scale(0.98);
+        }
+
+        /* Indicate tap hint */
+        .clock-tooltip {
+            position: absolute;
+            top: -30px;
+            background: rgba(255, 255, 255, 0.2);
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 0.8rem;
+            opacity: 0;
+            transition: opacity 0.3s;
+            pointer-events: none;
+        }
+
+        .clock-panel:hover .clock-tooltip {
+            opacity: 1;
         }
 
         .flip-unit-container {
@@ -1021,8 +1045,12 @@
     <!-- Dynamic Background Layer -->
     <div id="bg-layer" class="bg-clear"></div>
 
+    <!-- Dynamic Background Layer -->
+    <div id="bg-layer" class="bg-clear"></div>
+
     <div class="clock-panel">
-        <div class="flip-clock">
+        <div class="clock-tooltip">點擊切換風格</div>
+        <div class="flip-clock" title="點擊切換時鐘風格">
             <div class="flip-unit-container" id="hours">
                 <div class="digit-card" id="hour1-card">
                     <div class="digit-wrapper">
