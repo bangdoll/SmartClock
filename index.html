@@ -398,17 +398,33 @@
             letter-spacing: -0.05em;
         }
 
-        /* Theme: NIXIE TUBE (Vintage Amber) - Softer, Authentic Look */
+        /* Theme: FAUX NIXIE TUBE - 擬輝光管風格 */
         .clock-theme-nixie .digit-card {
-            background: rgba(15, 10, 8, 0.7);
-            /* Deep warm black, like tube interior */
-            border: none;
-            box-shadow: inset 0 0 10px rgba(0, 0, 0, 0.5);
-            border-radius: 4px;
+            background: linear-gradient(180deg,
+                    rgba(20, 15, 10, 0.9) 0%,
+                    rgba(10, 8, 5, 0.95) 100%);
+            /* Glass tube depth */
+            border: 1px solid rgba(80, 60, 40, 0.3);
+            box-shadow:
+                inset 0 2px 8px rgba(0, 0, 0, 0.8),
+                inset 0 -2px 8px rgba(50, 30, 10, 0.2),
+                0 0 15px rgba(255, 100, 30, 0.15);
+            /* Outer glow */
+            border-radius: 8px;
         }
 
         .clock-theme-nixie .digit-card::before {
-            display: none;
+            content: '';
+            position: absolute;
+            top: 5%;
+            left: 15%;
+            width: 70%;
+            height: 30%;
+            background: linear-gradient(180deg,
+                    rgba(255, 255, 255, 0.08) 0%,
+                    transparent 100%);
+            border-radius: 50%;
+            pointer-events: none;
         }
 
         .clock-theme-nixie .digit-card::after {
@@ -417,23 +433,31 @@
 
         .clock-theme-nixie .digit {
             font-family: 'Inter', sans-serif;
-            font-weight: 200;
-            /* Thinner for wire-like feel */
+            font-weight: 300;
             font-size: 8vw;
-            color: #cc6622;
-            /* Muted amber, not bright orange */
+            color: #ff6633;
+            /* Warm neon orange-red */
             z-index: 10;
 
-            /* Soft, warm glow - less intense */
+            /* Authentic Nixie glow layers */
             text-shadow:
-                0 0 3px #aa5500,
-                0 0 8px rgba(180, 80, 20, 0.6),
-                0 0 15px rgba(150, 60, 10, 0.3);
+                0 0 2px #ff8855,
+                /* Core brightness */
+                0 0 8px #ff5500,
+                /* Inner glow */
+                0 0 20px rgba(255, 80, 20, 0.7),
+                /* Mid glow */
+                0 0 40px rgba(255, 50, 0, 0.4),
+                /* Outer bloom */
+                0 0 60px rgba(200, 30, 0, 0.2);
+            /* Atmosphere */
         }
 
         .clock-theme-nixie .separator {
-            color: #aa5500;
-            text-shadow: 0 0 5px rgba(150, 70, 20, 0.5);
+            color: #ff5500;
+            text-shadow:
+                0 0 5px #ff6600,
+                0 0 15px rgba(255, 80, 20, 0.5);
         }
 
         /* Roll animation (Default Flip) */
