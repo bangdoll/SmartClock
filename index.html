@@ -2501,277 +2501,281 @@
                         console.log('[WakeLock] Screen Wake Lock released');
                     });
                 }
-                // ===== DYNAMIC BACKGROUND LOGIC =====
-                function updateBackground(weatherCode) {
-                    const bgLayer = document.getElementById('bg-layer');
-                    if (!bgLayer) return;
+            } catch (err) {
+                console.log(`[WakeLock] Error: ${err.message}`);
+            }
+        }
 
-                    const hour = new Date().getHours();
-                    const isNight = hour >= 18 || hour < 6;
+        // ===== DYNAMIC BACKGROUND LOGIC =====
+        function updateBackground(weatherCode) {
+            const bgLayer = document.getElementById('bg-layer');
+            if (!bgLayer) return;
 
-                    // Clear existing classes
-                    bgLayer.className = '';
-                    bgLayer.innerHTML = ''; // Remove particles
+            const hour = new Date().getHours();
+            const isNight = hour >= 18 || hour < 6;
 
-                    // Priority 1: Night Time (override weather unless it's raining)
-                    // Actually, let's mix night with weather. 
-                    // If it's night, use night bg, but maybe keep rain.
+            // Clear existing classes
+            bgLayer.className = '';
+            bgLayer.innerHTML = ''; // Remove particles
 
-                    // Map WMO codes to background types
-                    // 0,1: Clear
-                    // 2,3: Cloudy
-                    // 45,48: Fog (treat as cloudy)
-                    // 51-67, 80-82: Rain
-                    // 71-77, 85-86: Snow (treat as rain for now or add snow)
-                    // 95-99: Thunderstorm (treat as rain/dark)
+            // Priority 1: Night Time (override weather unless it's raining)
+            // Actually, let's mix night with weather. 
+            // If it's night, use night bg, but maybe keep rain.
 
-                    let isRainy = false;
-                    let isCloudy = false;
-                    let isClear = false;
+            // Map WMO codes to background types
+            // 0,1: Clear
+            // 2,3: Cloudy
+            // 45,48: Fog (treat as cloudy)
+            // 51-67, 80-82: Rain
+            // 71-77, 85-86: Snow (treat as rain for now or add snow)
+            // 95-99: Thunderstorm (treat as rain/dark)
 
-                    if (weatherCode === undefined || weatherCode === null) {
-                        // Default based on time if no weather data
-                        isClear = true;
-                    } else {
-                        if ([0, 1].includes(weatherCode)) isClear = true;
-                        else if ([2, 3, 45, 48].includes(weatherCode)) isCloudy = true;
-                        else if (weatherCode >= 51) isRainy = true;
-                        else isClear = true; // Fallback
-                    }
+            let isRainy = false;
+            let isCloudy = false;
+            let isClear = false;
 
-                    if (isNight) {
-                        bgLayer.classList.add('bg-night');
-                        // Add stars for night
-                        for (let i = 0; i < 50; i++) {
-                            const star = document.createElement('div');
-                            star.className = 'star';
-                            star.style.width = Math.random() * 2 + 1 + 'px';
-                            star.style.height = star.style.width;
-                            star.style.top = Math.random() * 100 + '%';
-                            star.style.left = Math.random() * 100 + '%';
-                            star.style.animationDelay = Math.random() * 2 + 's';
-                            bgLayer.appendChild(star);
-                        }
+            if (weatherCode === undefined || weatherCode === null) {
+                // Default based on time if no weather data
+                isClear = true;
+            } else {
+                if ([0, 1].includes(weatherCode)) isClear = true;
+                else if ([2, 3, 45, 48].includes(weatherCode)) isCloudy = true;
+                else if (weatherCode >= 51) isRainy = true;
+                else isClear = true; // Fallback
+            }
 
-                        // If raining at night, add rain on top
-                        if (isRainy) {
-                            addRainParticles(bgLayer);
-                        }
-                    } else {
-                        // Day time
-                        if (isRainy) {
-                            bgLayer.classList.add('bg-rain');
-                            addRainParticles(bgLayer);
-                        } else if (isCloudy) {
-                            bgLayer.classList.add('bg-cloudy');
-                        } else {
-                            bgLayer.classList.add('bg-clear');
-                        }
-                    }
+            if (isNight) {
+                bgLayer.classList.add('bg-night');
+                // Add stars for night
+                for (let i = 0; i < 50; i++) {
+                    const star = document.createElement('div');
+                    star.className = 'star';
+                    star.style.width = Math.random() * 2 + 1 + 'px';
+                    star.style.height = star.style.width;
+                    star.style.top = Math.random() * 100 + '%';
+                    star.style.left = Math.random() * 100 + '%';
+                    star.style.animationDelay = Math.random() * 2 + 's';
+                    bgLayer.appendChild(star);
                 }
 
-                function addRainParticles(container) {
-                    for (let i = 0; i < 30; i++) {
-                        const drop = document.createElement('div');
-                        drop.className = 'rain-drop';
-                        drop.style.left = Math.random() * 100 + '%';
-                        drop.style.animationDuration = Math.random() * 0.5 + 0.5 + 's';
-                        drop.style.animationDelay = Math.random() * 2 + 's';
-                        container.appendChild(drop);
-                    }
+                // If raining at night, add rain on top
+                if (isRainy) {
+                    addRainParticles(bgLayer);
+                }
+            } else {
+                // Day time
+                if (isRainy) {
+                    bgLayer.classList.add('bg-rain');
+                    addRainParticles(bgLayer);
+                } else if (isCloudy) {
+                    bgLayer.classList.add('bg-cloudy');
+                } else {
+                    bgLayer.classList.add('bg-clear');
                 }
             }
+        }
+
+        function addRainParticles(container) {
+            for (let i = 0; i < 30; i++) {
+                const drop = document.createElement('div');
+                drop.className = 'rain-drop';
+                drop.style.left = Math.random() * 100 + '%';
+                drop.style.animationDuration = Math.random() * 0.5 + 0.5 + 's';
+                drop.style.animationDelay = Math.random() * 2 + 's';
+                container.appendChild(drop);
+            }
+        }
 
         // Re-request wake lock when visibility changes (e.g. switch back from other tab)
         document.addEventListener('visibilitychange', async () => {
-                if (wakeLock !== null && document.visibilityState === 'visible') {
-                    requestWakeLock();
-                }
-            });
+            if (wakeLock !== null && document.visibilityState === 'visible') {
+                requestWakeLock();
+            }
+        });
 
-            // Double-tap to toggle fullscreen
-            let lastTap = 0;
-            document.addEventListener('touchend', (e) => {
-                // Ignore if double tap is on a button or link
-                if (e.target.tagName === 'BUTTON' || e.target.tagName === 'A') return;
+        // Double-tap to toggle fullscreen
+        let lastTap = 0;
+        document.addEventListener('touchend', (e) => {
+            // Ignore if double tap is on a button or link
+            if (e.target.tagName === 'BUTTON' || e.target.tagName === 'A') return;
 
-                const currentTime = new Date().getTime();
-                const tapLength = currentTime - lastTap;
-                if (tapLength < 500 && tapLength > 0) {
-                    toggleFullscreen();
-                    e.preventDefault();
-                }
-                lastTap = currentTime;
-            });
-
-            // Also support double click for desktop testing
-            document.addEventListener('dblclick', (e) => {
-                if (e.target.tagName === 'BUTTON' || e.target.tagName === 'A') return;
+            const currentTime = new Date().getTime();
+            const tapLength = currentTime - lastTap;
+            if (tapLength < 500 && tapLength > 0) {
                 toggleFullscreen();
-            });
+                e.preventDefault();
+            }
+            lastTap = currentTime;
+        });
 
-            function toggleFullscreen() {
-                if (!document.fullscreenElement) {
-                    document.documentElement.requestFullscreen().catch(err => {
-                        console.log(`[Fullscreen] Error enabling fullscreen: ${err.message}`);
-                    });
-                } else {
-                    if (document.exitFullscreen) {
-                        document.exitFullscreen();
-                    }
+        // Also support double click for desktop testing
+        document.addEventListener('dblclick', (e) => {
+            if (e.target.tagName === 'BUTTON' || e.target.tagName === 'A') return;
+            toggleFullscreen();
+        });
+
+        function toggleFullscreen() {
+            if (!document.fullscreenElement) {
+                document.documentElement.requestFullscreen().catch(err => {
+                    console.log(`[Fullscreen] Error enabling fullscreen: ${err.message}`);
+                });
+            } else {
+                if (document.exitFullscreen) {
+                    document.exitFullscreen();
                 }
             }
+        }
 
-            // ===== INIT =====
-            function init() {
-                initTheme();
-                initClock();
-                initGoogleAuth();
+        // ===== INIT =====
+        function init() {
+            initTheme();
+            initClock();
+            initGoogleAuth();
 
-                // Request Wake Lock on init (might need user interaction first)
-                requestWakeLock();
-                // Also try on first interaction just in case
-                window.addEventListener('click', () => {
-                    if (!wakeLock) requestWakeLock();
-                }, { once: true });
+            // Request Wake Lock on init (might need user interaction first)
+            requestWakeLock();
+            // Also try on first interaction just in case
+            window.addEventListener('click', () => {
+                if (!wakeLock) requestWakeLock();
+            }, { once: true });
 
-                setInterval(updateClock, 1000);
+            setInterval(updateClock, 1000);
+            fetchWeather();
+            fetchNews();
+            fetchEarthquake();
+            setInterval(fetchWeather, 600000);
+            setInterval(fetchNews, 300000);
+            setInterval(fetchEarthquake, 300000);
+            setInterval(() => {
+                const token = localStorage.getItem('google_access_token');
+                if (token) fetchCalendarEvents(token, true); // true = isBackground
+            }, 300000); // Refresh calendar every 5 mins
+
+            // 暫停輪播期間，直接顯示 Calendar 卡片以便調試
+            if (CAROUSEL_PAUSED) {
+                showCard('calendarCard');
+                console.log('🔧 輪播已暫停，顯示 Calendar 卡片進行調試');
+            } else {
+                showCard('newsCard');
+                carouselIntervalId = setInterval(nextCarouselStep, CONFIG.CARD_INTERVAL);
+            }
+
+            // Add click handlers to indicators
+            const indicatorCards = ['newsCard', 'weatherCard', 'earthquakeCard', 'calendarCard'];
+            const indicatorSteps = [0, 6, 7, 3]; // Map to carousel steps
+            document.querySelectorAll('.indicator').forEach((el, i) => {
+                el.addEventListener('click', () => {
+                    // Reset carousel timer
+                    if (carouselIntervalId) {
+                        clearInterval(carouselIntervalId);
+                        carouselIntervalId = setInterval(nextCarouselStep, CONFIG.CARD_INTERVAL);
+                    }
+                    // Navigate to the selected card
+                    carouselStep = indicatorSteps[i];
+                    goToCarouselStep(carouselStep);
+                });
+            });
+
+            console.log('🕐 Smart Clock Dashboard 已啟動（含 Google Calendar 整合）');
+
+            // Listen for network status changes
+            window.addEventListener('online', () => {
+                console.log('📶 網路已恢復，更新資料...');
                 fetchWeather();
                 fetchNews();
                 fetchEarthquake();
-                setInterval(fetchWeather, 600000);
-                setInterval(fetchNews, 300000);
-                setInterval(fetchEarthquake, 300000);
-                setInterval(() => {
-                    const token = localStorage.getItem('google_access_token');
-                    if (token) fetchCalendarEvents(token, true); // true = isBackground
-                }, 300000); // Refresh calendar every 5 mins
+                const token = localStorage.getItem('google_access_token');
+                if (token) fetchCalendarEvents(token, true); // true = isBackground
+            });
 
-                // 暫停輪播期間，直接顯示 Calendar 卡片以便調試
-                if (CAROUSEL_PAUSED) {
-                    showCard('calendarCard');
-                    console.log('🔧 輪播已暫停，顯示 Calendar 卡片進行調試');
-                } else {
-                    showCard('newsCard');
-                    carouselIntervalId = setInterval(nextCarouselStep, CONFIG.CARD_INTERVAL);
-                }
+            window.addEventListener('offline', () => {
+                console.log('📴 網路已斷開，使用快取資料');
+            });
 
-                // Add click handlers to indicators
-                const indicatorCards = ['newsCard', 'weatherCard', 'earthquakeCard', 'calendarCard'];
-                const indicatorSteps = [0, 6, 7, 3]; // Map to carousel steps
-                document.querySelectorAll('.indicator').forEach((el, i) => {
-                    el.addEventListener('click', () => {
-                        // Reset carousel timer
-                        if (carouselIntervalId) {
-                            clearInterval(carouselIntervalId);
-                            carouselIntervalId = setInterval(nextCarouselStep, CONFIG.CARD_INTERVAL);
-                        }
-                        // Navigate to the selected card
-                        carouselStep = indicatorSteps[i];
-                        goToCarouselStep(carouselStep);
-                    });
-                });
-
-                console.log('🕐 Smart Clock Dashboard 已啟動（含 Google Calendar 整合）');
-
-                // Listen for network status changes
-                window.addEventListener('online', () => {
-                    console.log('📶 網路已恢復，更新資料...');
-                    fetchWeather();
-                    fetchNews();
-                    fetchEarthquake();
-                    const token = localStorage.getItem('google_access_token');
-                    if (token) fetchCalendarEvents(token, true); // true = isBackground
-                });
-
-                window.addEventListener('offline', () => {
-                    console.log('📴 網路已斷開，使用快取資料');
-                });
-
-                // Register Service Worker for offline support
-                if ('serviceWorker' in navigator) {
-                    navigator.serviceWorker.register('/sw.js')
-                        .then((reg) => console.log('📦 Service Worker 已註冊'))
-                        .catch((err) => console.log('Service Worker 註冊失敗:', err));
-                }
-
-                // Periodic data freshness check (every 1 minute)
-                setInterval(checkAndRefreshData, 60000);
-                console.log('✅ 資料新鮮度自動檢查已啟動');
+            // Register Service Worker for offline support
+            if ('serviceWorker' in navigator) {
+                navigator.serviceWorker.register('/sw.js')
+                    .then((reg) => console.log('📦 Service Worker 已註冊'))
+                    .catch((err) => console.log('Service Worker 註冊失敗:', err));
             }
 
-            // ===== CLOCK THEME LOGIC =====
-            const CLOCK_THEMES = ['flip', 'neon', 'matrix'];
-            let currentClockTheme = localStorage.getItem('clock_theme') || 'flip';
+            // Periodic data freshness check (every 1 minute)
+            setInterval(checkAndRefreshData, 60000);
+            console.log('✅ 資料新鮮度自動檢查已啟動');
+        }
 
-            function applyClockTheme(theme) {
+        // ===== CLOCK THEME LOGIC =====
+        const CLOCK_THEMES = ['flip', 'neon', 'matrix'];
+        let currentClockTheme = localStorage.getItem('clock_theme') || 'flip';
+
+        function applyClockTheme(theme) {
+            const clockEl = document.querySelector('.flip-clock');
+            if (!clockEl) return;
+            // Remove all existing theme classes
+            CLOCK_THEMES.forEach(t => clockEl.classList.remove(`clock-theme-${t}`));
+
+            // Add new theme class (unless it's default flip which has no extra class)
+            if (theme !== 'flip') {
+                clockEl.classList.add(`clock-theme-${theme}`);
+            }
+
+            localStorage.setItem('clock_theme', theme);
+            currentClockTheme = theme;
+            console.log(`[Clock] Theme switched to: ${theme}`);
+        }
+
+        function toggleClockTheme() {
+            const index = CLOCK_THEMES.indexOf(currentClockTheme);
+            const nextTheme = CLOCK_THEMES[(index + 1) % CLOCK_THEMES.length];
+            applyClockTheme(nextTheme);
+        }
+
+        // Initialize clock theme
+        applyClockTheme(currentClockTheme);
+
+        // Add verification for manual testing
+        // Use Hitbox primarily, fallback to container
+        // ... (keep hitbox logic as backup)
+
+        // Explicit Style Toggle Button Logic
+        const styleBtn = document.getElementById('styleToggle');
+        if (styleBtn) {
+            styleBtn.addEventListener('click', (e) => {
+                e.stopPropagation(); // critical
+                toggleClockTheme();
+
+                // Visual feedback
+                styleBtn.style.transform = 'scale(0.9)';
+                setTimeout(() => styleBtn.style.transform = 'scale(1)', 100);
+            });
+        }
+
+        const clockHitbox = document.getElementById('clock-hitbox');
+        if (clockHitbox) {
+            clockHitbox.onclick = function (e) {
+                console.log('[Clock] Hitbox Click detected');
+                e.stopPropagation();
+
+                toggleClockTheme();
+
+                // Visual feedback
                 const clockEl = document.querySelector('.flip-clock');
-                if (!clockEl) return;
-                // Remove all existing theme classes
-                CLOCK_THEMES.forEach(t => clockEl.classList.remove(`clock-theme-${t}`));
-
-                // Add new theme class (unless it's default flip which has no extra class)
-                if (theme !== 'flip') {
-                    clockEl.classList.add(`clock-theme-${theme}`);
+                if (clockEl) {
+                    clockEl.style.transform = 'scale(0.95)';
+                    setTimeout(() => clockEl.style.transform = 'scale(1)', 100);
                 }
-
-                localStorage.setItem('clock_theme', theme);
-                currentClockTheme = theme;
-                console.log(`[Clock] Theme switched to: ${theme}`);
-            }
-
-            function toggleClockTheme() {
-                const index = CLOCK_THEMES.indexOf(currentClockTheme);
-                const nextTheme = CLOCK_THEMES[(index + 1) % CLOCK_THEMES.length];
-                applyClockTheme(nextTheme);
-            }
-
-            // Initialize clock theme
-            applyClockTheme(currentClockTheme);
-
-            // Add verification for manual testing
-            // Use Hitbox primarily, fallback to container
-            // ... (keep hitbox logic as backup)
-
-            // Explicit Style Toggle Button Logic
-            const styleBtn = document.getElementById('styleToggle');
-            if (styleBtn) {
-                styleBtn.addEventListener('click', (e) => {
-                    e.stopPropagation(); // critical
+            };
+        } else {
+            // Fallback if hitbox missing
+            const clockContainer = document.querySelector('.flip-clock');
+            if (clockContainer) {
+                clockContainer.onclick = function (e) {
                     toggleClockTheme();
-
-                    // Visual feedback
-                    styleBtn.style.transform = 'scale(0.9)';
-                    setTimeout(() => styleBtn.style.transform = 'scale(1)', 100);
-                });
-            }
-
-            const clockHitbox = document.getElementById('clock-hitbox');
-            if (clockHitbox) {
-                clockHitbox.onclick = function (e) {
-                    console.log('[Clock] Hitbox Click detected');
-                    e.stopPropagation();
-
-                    toggleClockTheme();
-
-                    // Visual feedback
-                    const clockEl = document.querySelector('.flip-clock');
-                    if (clockEl) {
-                        clockEl.style.transform = 'scale(0.95)';
-                        setTimeout(() => clockEl.style.transform = 'scale(1)', 100);
-                    }
                 };
-            } else {
-                // Fallback if hitbox missing
-                const clockContainer = document.querySelector('.flip-clock');
-                if (clockContainer) {
-                    clockContainer.onclick = function (e) {
-                        toggleClockTheme();
-                    };
-                }
             }
+        }
 
-            init();
+        init();
     </script>
 </body>
 
