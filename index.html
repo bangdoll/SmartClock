@@ -100,6 +100,19 @@
             background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
         }
 
+        /* ===== DYNAMIC BACKGROUND LAYERS ===== */
+        #bg-layer {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+            transition: background 1s ease, opacity 1s ease;
+            pointer-events: none !important;
+            /* Force pass-through */
+        }
+
         .bg-clear::after {
             content: '';
             position: absolute;
@@ -109,6 +122,7 @@
             height: 200%;
             background: radial-gradient(circle, rgba(255, 255, 255, 0.1) 0%, transparent 60%);
             animation: sunRotate 20s linear infinite;
+            pointer-events: none;
         }
 
         /* 雨天 (Rain): 深灰漸層 + 雨滴動畫 */
@@ -2635,26 +2649,16 @@
             // Add verification for manual testing
             const clockContainer = document.querySelector('.flip-clock');
             if (clockContainer) {
-                const handleClockInteraction = (e) => {
-                    // Start toggling
+                // Simplified interaction handler - just use onclick
+                // This avoids any complex event listener issues
+                clockContainer.onclick = function (e) {
+                    console.log('[Clock] Click detected');
                     toggleClockTheme();
 
                     // Visual feedback
-                    clockContainer.style.transform = 'scale(0.95)';
-                    setTimeout(() => clockContainer.style.transform = 'scale(1)', 100);
-
-                    // Prevent default to avoid double-firing (ghost clicks)
-                    // But we must allow scrolling if the user is dragging? 
-                    // Actually, let's just use click. The main issue was likely z-index.
-                    // But user says "doesn't work at all". `touchend` is safer on some mobile webviews.
-                    e.preventDefault();
+                    this.style.transform = 'scale(0.95)';
+                    setTimeout(() => this.style.transform = 'scale(1)', 100);
                 };
-
-                // Use click for desktop and standard mobile behavior
-                clockContainer.addEventListener('click', handleClockInteraction);
-                // Use touchend for faster response on touch devices, but ensure we don't double fire
-                // But wait, if we preventDefault on touchend, click won't fire. That's good.
-                clockContainer.addEventListener('touchend', handleClockInteraction);
             }
 
             init();
