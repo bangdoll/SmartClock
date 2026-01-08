@@ -375,39 +375,58 @@
 
         /* ===== CLOCK THEMES ===== */
 
-        /* Theme: NEON */
-        .clock-theme-neon .digit-card {
-            background: rgba(0, 0, 0, 0.8);
-            border: 2px solid #0ff;
-            box-shadow: 0 0 15px #0ff, inset 0 0 15px #0ff;
+        /* Theme: MINIMAL (Float) - Apple Style */
+        .clock-theme-minimal .digit-card {
+            background: transparent;
+            box-shadow: none;
+            border: none;
         }
 
-        .clock-theme-neon .digit-card::after {
+        .clock-theme-minimal .digit-card::after {
             display: none;
-            /* No flip line */
         }
 
-        .clock-theme-neon .digit {
-            font-family: 'Orbitron', sans-serif;
+        .clock-theme-minimal .digit {
+            font-family: 'Inter', -apple-system, sans-serif;
+            font-weight: 200;
+            /* Thin */
+            font-size: 10vw;
+            /* Larger scale */
+            color: var(--text-primary);
+            text-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+            letter-spacing: -0.05em;
+        }
+
+        /* Theme: INDUSTRIAL (Bold) - Swiss Style */
+        .clock-theme-industrial .digit-card {
+            background: #222;
+            border-radius: 4px;
+            /* Sharper */
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        [data-theme="light"] .clock-theme-industrial .digit-card {
+            background: #eee;
+            border: 1px solid #ccc;
+        }
+
+        .clock-theme-industrial .digit-card::after {
+            display: none;
+        }
+
+        .clock-theme-industrial .digit {
+            font-family: 'Inter', sans-serif;
+            font-weight: 900;
+            /* Ultra Bold */
+            font-size: 9vw;
             color: #fff;
-            text-shadow: 0 0 10px #0ff, 0 0 20px #0ff, 0 0 40px #0ff;
+            letter-spacing: -2px;
         }
 
-        /* Theme: MATRIX */
-        .clock-theme-matrix .digit-card {
-            background: #000;
-            border: 1px solid #0f0;
-            box-shadow: 0 0 5px #0f0;
+        [data-theme="light"] .clock-theme-industrial .digit {
+            color: #222;
         }
-
-        .clock-theme-matrix .digit-card::after {
-            display: none;
-        }
-
-        .clock-theme-matrix .digit {
-            font-family: 'Share Tech Mono', monospace;
-            color: #0f0;
-            text-shadow: 0 0 5px #0f0;
         }
 
         /* Roll animation (Default Flip) */
@@ -2691,7 +2710,7 @@
         }
 
         // ===== CLOCK THEME LOGIC =====
-        const CLOCK_THEMES = ['flip', 'neon', 'matrix'];
+        const CLOCK_THEMES = ['flip', 'minimal', 'industrial'];
         let currentClockTheme = localStorage.getItem('clock_theme') || 'flip';
 
         function applyClockTheme(theme) {
