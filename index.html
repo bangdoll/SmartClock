@@ -55,6 +55,7 @@
         }
 
         /* Theme Toggle Button (Top-Left) */
+        /* Theme Toggle Button (Top-Left) */
         .theme-toggle {
             position: fixed;
             top: 2rem;
@@ -64,21 +65,27 @@
             width: 48px;
             height: 48px;
             border-radius: 50%;
-            background: var(--bg-card);
-            border: none;
+            background: rgba(0, 0, 0, 0.6);
+            /* High contrast background */
+            color: #fff;
+            border: 1px solid rgba(255, 255, 255, 0.5);
             cursor: pointer;
             display: flex;
             align-items: center;
             justify-content: center;
             font-size: 1.5rem;
             transition: all 0.3s ease;
-            z-index: 100;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+            z-index: 20000;
+            /* Extreme Z-Index */
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+            backdrop-filter: blur(8px);
         }
 
         .theme-toggle:hover {
             transform: scale(1.1);
-            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.2);
+            background: rgba(0, 0, 0, 0.8);
+            border-color: #fff;
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.4);
         }
 
         .theme-toggle:active {
@@ -92,25 +99,28 @@
             left: 6rem;
             /* Next to theme toggle (2rem + 48px + gap) */
             right: auto;
-
             width: 48px;
             height: 48px;
             border-radius: 50%;
-            background: var(--bg-card);
-            border: none;
+            background: rgba(0, 0, 0, 0.6);
+            color: #fff;
+            border: 1px solid rgba(255, 255, 255, 0.5);
             cursor: pointer;
             display: flex;
             align-items: center;
             justify-content: center;
             font-size: 1.5rem;
             transition: all 0.3s ease;
-            z-index: 100;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+            z-index: 20000;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+            backdrop-filter: blur(8px);
         }
 
         .style-toggle:hover {
             transform: scale(1.1);
-            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.2);
+            background: rgba(0, 0, 0, 0.8);
+            border-color: #fff;
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.4);
         }
 
         .style-toggle:active {
@@ -1081,30 +1091,37 @@
             }
 
             /* Move theme toggle to top left corner (adjusted) */
+            /* Move theme toggle to top left corner (adjusted) */
             .theme-toggle {
                 top: 1rem;
                 left: 1rem;
                 right: auto;
-                width: 36px;
-                height: 36px;
-                font-size: 1rem;
-                opacity: 0.8;
-                background: rgba(255, 255, 255, 0.1);
-                /* Ensure visibility */
+                width: 40px;
+                height: 40px;
+                font-size: 1.2rem;
+                opacity: 1;
+                /* High Visibility */
+                background: rgba(0, 0, 0, 0.6);
+                border: 1px solid rgba(255, 255, 255, 0.4);
                 backdrop-filter: blur(5px);
+                z-index: 20000;
             }
 
             .style-toggle {
                 top: 1rem;
-                left: 4rem;
+                left: 4.5rem;
+                /* Tighter padding */
                 /* Next to theme toggle */
                 right: auto;
-                width: 36px;
-                height: 36px;
-                font-size: 1rem;
-                opacity: 0.8;
-                background: rgba(255, 255, 255, 0.1);
+                width: 40px;
+                height: 40px;
+                font-size: 1.2rem;
+                opacity: 1;
+                /* High Visibility */
+                background: rgba(0, 0, 0, 0.6);
+                border: 1px solid rgba(255, 255, 255, 0.4);
                 backdrop-filter: blur(5px);
+                z-index: 20000;
             }
 
             .theme-toggle:hover {
